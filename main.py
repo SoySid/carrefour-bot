@@ -9,7 +9,6 @@ productos = [
     {"nombre": "Yerba", "url": "https://www.carrefour.com.ar/yerba-mate-sabor-hierbas-buenas-y-santas-500-grs-718429/p"},
     {"nombre": "Aceite", "url": "https://www.carrefour.com.ar/aceite-de-girasol-natura-15-l/p"},
     {"nombre": "Leche", "url": "https://www.carrefour.com.ar/leche-la-serenisima-clasica-3-1l-720719/p"}
-
 ]
 
 def limpiar_funcion(dato):
@@ -41,7 +40,6 @@ def calcular_variacion_canasta(lista1,lista2):
     variacion= calcular_variacion(precios_hoy,precios_anterior)
     return variacion
 
-
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=False, slow_mo=1000)
     context = browser.new_context(
@@ -61,7 +59,7 @@ with sync_playwright() as p:
         "registros": lista_precios 
     }
 
-    nombre_archivo = "historial_precios.json"
+    nombre_archivo = f"historial_{date.today().strftime('%Y_%m')}.json"
 
     if not os.path.exists(nombre_archivo):
         with open(nombre_archivo, "w") as archivo:
@@ -69,7 +67,7 @@ with sync_playwright() as p:
         print("Aumento del dia: 0%")
         print("Aumento acumulado: 0%")
     else:
-        with open("historial_precios.json", "r") as archivo:
+        with open(nombre_archivo, "r") as archivo:
             datos = json.load(archivo)
             registro_ayer=datos[-1]
             registro_dia1=datos[0]["registros"]
@@ -77,27 +75,35 @@ with sync_playwright() as p:
             lista_precios_dia1 = [item["precio"] for item in datos[0]["registros"]]
             lista_precios_ayer = [item["precio"] for item in datos[-1]["registros"]]
 
+        print("=" * 95)
+        print(f"{'PRODUCTO':<10} | {'HOY':<10} | {'AYER':<10} | {'VAR. DÍA':<12} | {'VAR. ACUM.':<12}")
+        print("=" * 95)
+
         for lista in lista_precios:
-            nombre_buscado=lista["nombre"]
-            precio_hoy=lista["precio"]
+            nombre_buscado = lista["nombre"]
+            precio_hoy = lista["precio"]
 
             for registro in registro_dia1:
-                precio_dia1=registro["precio"]
-                
-                if nombre_buscado==registro["nombre"]:
-                   precio_dia1=registro["precio"]
-                   variacion_acumulada=calcular_variacion(precio_hoy,precio_dia1)
-                   estado_acumulado=calcular_estado(variacion_acumulada)
+                if nombre_buscado == registro["nombre"]:
+                    precio_dia1 = registro["precio"]
+                    variacion_acumulada = calcular_variacion(precio_hoy, precio_dia1)
+                    estado_acumulado = calcular_estado(variacion_acumulada)
 
             for registro in registro_ayer["registros"]:
-                if nombre_buscado==registro["nombre"]:
-                    precio_ayer=registro["precio"]
-                    variacion_dia=calcular_variacion(precio_hoy,precio_ayer)
-                    estado_dia=calcular_estado(variacion_dia)
+                if nombre_buscado == registro["nombre"]:
+                    precio_ayer = registro["precio"]
+                    variacion_dia = calcular_variacion(precio_hoy, precio_ayer)
+                    estado_dia = calcular_estado(variacion_dia)
             
-            print(f"Producto: {nombre_buscado}, precio ayer: {precio_ayer}, precio hoy: {precio_hoy}, variacion del dia: {variacion_dia}, estado: {estado_dia}, variacion acumulada:{variacion_acumulada}, estado:{estado_acumulado}")
-        print(f"Variacion de la canasta en el dia:{calcular_variacion_canasta(lista_precios_hoy,lista_precios_ayer)}")
-        print(f"Variacion de la canasta acumulada:{calcular_variacion_canasta(lista_precios_hoy,lista_precios_dia1)}")
+            print(f"{nombre_buscado:<10} | ${precio_hoy:>8.2f} | ${precio_ayer:>8.2f} | {variacion_dia:>5.2f}% ({estado_dia:<5}) | {variacion_acumulada:>5.2f}% ({estado_acumulado:<5})")
+
+        var_dia_canasta = calcular_variacion_canasta(lista_precios_hoy, lista_precios_ayer)
+        var_acum_canasta = calcular_variacion_canasta(lista_precios_hoy, lista_precios_dia1)
+
+        print("=" * 95)
+        print(f"CANASTA DÍA: {var_dia_canasta:>6.2f}% ({calcular_estado(var_dia_canasta)}) | CANASTA ACUMULADA: {var_acum_canasta:>6.2f}% ({calcular_estado(var_acum_canasta)})")
+        print("=" * 95)
+
         datos.append(registro_hoy)
         with open(nombre_archivo, "w") as archivo:
             json.dump(datos, archivo)
