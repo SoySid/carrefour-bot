@@ -43,17 +43,18 @@ with sync_playwright() as p:
 
     if not os.path.exists(nombre_archivo):
         with open(nombre_archivo, "w") as archivo:
-            json.dump(registro_hoy, archivo)
+            json.dump([registro_hoy], archivo)
         print("Aumento del dia: 0%")
         print("Aumento acumulado: 0%")
     else:
         with open("historial_precios.json", "r") as archivo:
             datos = json.load(archivo)
+            registro_ayer=datos[-1]
         for lista in lista_precios:
             nombre_buscado=lista["nombre"]
             precio_hoy=lista["precio"]
             
-            for registro in datos["registros"]:
+            for registro in registro_ayer["registros"]:
                 if nombre_buscado==registro["nombre"]:
                     precio_ayer=registro["precio"]
                     variacion = ((precio_hoy - precio_ayer) / precio_ayer) * 100
@@ -65,8 +66,8 @@ with sync_playwright() as p:
                     else:
                         estado="igual"
             print(f"Producto: {nombre_buscado}, precio ayer: {precio_ayer}, precio hoy: {precio_hoy}, variacion: {variacion}, estado: {estado}")
-                    
-        print(datos)
-        print(type(datos))
+        datos.append(registro_hoy)
+        with open(nombre_archivo, "w") as archivo:
+            json.dump(datos, archivo)
 
     browser.close()
