@@ -1,4 +1,7 @@
 from playwright.sync_api import sync_playwright
+from datetime import date
+import json
+import os
 
 lista_precios=[]
 
@@ -31,6 +34,17 @@ with sync_playwright() as p:
         precio_actual=limpiar_funcion(dato)
         lista_precios.append({"nombre":producto["nombre"],"precio":precio_actual})
 
-    print(lista_precios)
+    registro_hoy={
+        "fecha": str(date.today()),
+        "registros": lista_precios 
+    }
+
+    nombre_archivo = "historial_precios.json"
+
+    if not os.path.exists(nombre_archivo):
+        with open(nombre_archivo, "w") as archivo:
+            json.dump(registro_hoy, archivo)
+        print("Aumento del dia: 0%")
+        print("Aumento acumulado: 0%")
 
     browser.close()
