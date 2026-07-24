@@ -32,5 +32,22 @@
                 "precio": 2099.0
             }
         ]
+    },
+    {
+        "fecha": "2026-07-24",
+        "registros": [
+            {
+                "nombre": "Yerba",
+                "precio": 2939.0
+            },
+            {
+                "nombre": "Aceite",
+                "precio": 6975.0
+            },
+            {
+                "nombre": "Leche",
+                "precio": 2099.0
+            }
+        ]
     }
 ]
