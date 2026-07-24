@@ -30,5 +30,6 @@ jobs:
       - name: Ejecutar el Scraper
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           python carrefour_bot.py
