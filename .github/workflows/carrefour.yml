@@ -31,4 +31,4 @@ jobs:
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
         run: |
-          python tu_script.py
+          python carrefour_bot.py
