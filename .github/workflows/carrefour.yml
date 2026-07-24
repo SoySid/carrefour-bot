@@ -25,7 +25,7 @@ jobs:
 
       - name: Instalar Playwright con dependencias
         run: |
-          npx playwright install --with-deps
+          python -m playwright install --with-deps
 
       - name: Ejecutar el Scraper
         env:
