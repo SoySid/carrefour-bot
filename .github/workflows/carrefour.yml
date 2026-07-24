@@ -7,7 +7,7 @@ on:
 
 jobs:
   scrape:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout del repositorio
@@ -23,9 +23,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Instalar Playwright con dependencias
+      - name: Instalar Playwright y dependencias
         run: |
-          python -m playwright install --with-deps
+          python -m playwright install --with-deps chromium
 
       - name: Ejecutar el Scraper
         env:
