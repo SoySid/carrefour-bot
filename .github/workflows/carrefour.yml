@@ -15,8 +15,8 @@ jobs:
           python-version: '3.11'
       - name: Install dependencies
         run: pip install -r requirements.txt
-      - name: Install Playwright
-        uses: microsoft/playwright-github-action@v1
+      - name: Install Playwright browsers
+        run: playwright install --with-deps
       - name: Run Carrefour bot
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
