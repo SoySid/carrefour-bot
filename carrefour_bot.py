@@ -1,9 +1,9 @@
-from playwright.sync_api import sync_playwright
-from datetime import date
-from dotenv import load_dotenv  # <-- 1. Importar
-import json
 import os
 import requests
+from datetime import date
+from dotenv import load_dotenv
+import psycopg2
+from playwright.sync_api import sync_playwright
 
 load_dotenv()
 
@@ -11,24 +11,16 @@ load_dotenv()
 # CONFIGURACIÓN Y CREDENCIALES
 # ---------------------------------------------------------
 HEADLESS = os.getenv("HEADLESS", "true").lower() == "true"
-
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-
-precios_hoy = {}
-
-productos = [
-    {"nombre": "Yerba", "url": "https://www.carrefour.com.ar/yerba-mate-sabor-hierbas-buenas-y-santas-500-grs-718429/p"},
-    {"nombre": "Aceite", "url": "https://www.carrefour.com.ar/aceite-de-girasol-natura-15-l/p"},
-    {"nombre": "Leche", "url": "https://www.carrefour.com.ar/leche-la-serenisima-clasica-3-1l-720719/p"}
-]
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 def limpiar_funcion(dato):
     dato = dato.replace("$", "").replace(".", "").replace(",", ".").strip()
     return float(dato)
 
 def calcular_variacion(dato1, dato2):
-    if dato2 == 0:
+    if not dato2 or dato2 == 0:
         return 0.0
     return round(((dato1 - dato2) / dato2) * 100, 2)
 
@@ -53,8 +45,37 @@ def enviar_telegram(mensaje):
         print(f"Error enviando mensaje a Telegram: {e}")
 
 # ---------------------------------------------------------
-# ETAPA 1: SCRAPING
+# ETAPA 1: BASE DE DATOS Y LECTURA
 # ---------------------------------------------------------
+conn = psycopg2.connect(DATABASE_URL)
+cursor = conn.cursor()
+
+# Cargar únicamente los productos activos
+cursor.execute("SELECT id, nombre, url FROM productos WHERE activo = TRUE")
+productos = cursor.fetchall()
+
+# Obtener los precios anteriores para calcular variaciones
+cursor.execute("""
+    SELECT DISTINCT ON (producto_id) producto_id, precio 
+    FROM historial_precios 
+    WHERE fecha < CURRENT_DATE 
+    ORDER BY producto_id, fecha DESC
+""")
+precios_ayer = dict(cursor.fetchall())
+
+cursor.execute("""
+    SELECT DISTINCT ON (producto_id) producto_id, precio 
+    FROM historial_precios 
+    ORDER BY producto_id, fecha ASC
+""")
+precios_dia1 = dict(cursor.fetchall())
+
+# ---------------------------------------------------------
+# ETAPA 2: SCRAPING BLINDADO E INSERCIÓN EN NEON
+# ---------------------------------------------------------
+precios_hoy = {}
+fecha_actual = date.today()
+
 with sync_playwright() as p:
     browser = p.chromium.launch(
         headless=HEADLESS,
@@ -65,70 +86,70 @@ with sync_playwright() as p:
     )
     page = context.new_page()
 
-    for producto in productos:
-        page.goto(producto["url"], wait_until="domcontentloaded")
-        contenedor = page.locator("span.valtech-carrefourar-product-price-0-x-sellingPrice")
-        dato = contenedor.locator("span.valtech-carrefourar-product-price-0-x-currencyContainer").inner_text()
-        precios_hoy[producto["nombre"]] = limpiar_funcion(dato)
+    for prod_id, nombre, url in productos:
+        try:
+            page.goto(url, wait_until="domcontentloaded", timeout=30000)
+            contenedor = page.locator("span.valtech-carrefourar-product-price-0-x-sellingPrice")
+            
+            if contenedor.count() > 0:
+                dato = contenedor.locator("span.valtech-carrefourar-product-price-0-x-currencyContainer").inner_text()
+                precio = limpiar_funcion(dato)
+                precios_hoy[prod_id] = {"nombre": nombre, "precio": precio}
+
+                # Insertar o actualizar el precio del día en la BD
+                cursor.execute("""
+                    INSERT INTO historial_precios (producto_id, fecha, precio)
+                    VALUES (%s, %s, %s)
+                    ON CONFLICT (producto_id, fecha) 
+                    DO UPDATE SET precio = EXCLUDED.precio;
+                """, (prod_id, fecha_actual, precio))
+            else:
+                print(f"⚠️ Sin precio/stock para: {nombre}")
+        except Exception as e:
+            print(f"❌ Error scraping {nombre}: {e}")
 
     browser.close()
 
+conn.commit()
+
 # ---------------------------------------------------------
-# ETAPA 2: PROCESAMIENTO Y CÁLCULOS
+# ETAPA 3: REPORTE Y TELEGRAM
 # ---------------------------------------------------------
-fecha_actual = str(date.today())
-registro_hoy = {"fecha": fecha_actual, "precios": precios_hoy}
-nombre_archivo = "historial.json"
+lineas = [f"📊 *Reporte Carrefour - {fecha_actual}*\n"]
 
-if not os.path.exists(nombre_archivo):
-    datos = []
-else:
-    with open(nombre_archivo, "r") as archivo:
-        datos = json.load(archivo)
+acum_hoy_ayer, acum_ayer = 0.0, 0.0
+acum_hoy_dia1, acum_dia1 = 0.0, 0.0
 
-registros_pasados = [r for r in datos if r["fecha"] != fecha_actual]
+for prod_id, data in precios_hoy.items():
+    nombre = data["nombre"]
+    precio_h = data["precio"]
+    precio_a = precios_ayer.get(prod_id, precio_h)
+    precio_d1 = precios_dia1.get(prod_id, precio_h)
 
-precios_ayer = registros_pasados[-1]["precios"] if registros_pasados else precios_hoy
-precios_dia1 = datos[0]["precios"] if datos else precios_hoy
-
-# Armado del reporte
-lineas = [
-    f"📊 *Reporte Carrefour - {fecha_actual}*\n"
-]
-
-for nombre, precio_hoy in precios_hoy.items():
-    precio_ayer = precios_ayer.get(nombre, precio_hoy)
-    precio_dia1 = precios_dia1.get(nombre, precio_hoy)
-
-    var_dia = calcular_variacion(precio_hoy, precio_ayer)
-    var_acum = calcular_variacion(precio_hoy, precio_dia1)
+    var_dia = calcular_variacion(precio_h, precio_a)
+    var_acum = calcular_variacion(precio_h, precio_d1)
 
     lineas.append(
-        f"• *{nombre}*: ${precio_hoy:.2f} | *Día:* {var_dia:+.2f}% ({calcular_estado(var_dia)}) | *Acum:* {var_acum:+.2f}% ({calcular_estado(var_acum)})"
+        f"• *{nombre}*: ${precio_h:.2f} | *Día:* {var_dia:+.2f}% ({calcular_estado(var_dia)}) | *Acum:* {var_acum:+.2f}% ({calcular_estado(var_acum)})"
     )
 
-comunes_ayer = precios_hoy.keys() & precios_ayer.keys()
-comunes_dia1 = precios_hoy.keys() & precios_dia1.keys()
+    if prod_id in precios_ayer:
+        acum_hoy_ayer += precio_h
+        acum_ayer += precio_a
 
-var_dia_canasta = calcular_variacion(
-    sum(precios_hoy[k] for k in comunes_ayer),
-    sum(precios_ayer[k] for k in comunes_ayer)
-)
-var_acum_canasta = calcular_variacion(
-    sum(precios_hoy[k] for k in comunes_dia1),
-    sum(precios_dia1[k] for k in comunes_dia1)
-)
+    if prod_id in precios_dia1:
+        acum_hoy_dia1 += precio_h
+        acum_dia1 += precio_d1
+
+var_dia_canasta = calcular_variacion(acum_hoy_ayer, acum_ayer)
+var_acum_canasta = calcular_variacion(acum_hoy_dia1, acum_dia1)
 
 lineas.append(f"\n📦 *Canasta del día:* {var_dia_canasta:+.2f}% ({calcular_estado(var_dia_canasta)})")
 lineas.append(f"📦 *Canasta acumulada:* {var_acum_canasta:+.2f}% ({calcular_estado(var_acum_canasta)})")
 
 informe = "\n".join(lineas)
-
-# Consola y Telegram
 print(informe)
 enviar_telegram(informe)
 
-# Guardar historial
-registros_pasados.append(registro_hoy)
-with open(nombre_archivo, "w") as archivo:
-    json.dump(registros_pasados, archivo, indent=4)
+cursor.close()
+conn.close()

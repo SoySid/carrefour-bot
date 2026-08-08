@@ -5,9 +5,6 @@ on:
     - cron: "0 9 * * *"
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
   scrape:
     runs-on: ubuntu-22.04
@@ -34,13 +31,6 @@ jobs:
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           python carrefour_bot.py
-
-      - name: Guardar historial JSON en el repositorio
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add -f historial.json
-          git commit -m "chore: actualizar historial de precios [skip ci]" || exit 0
-          git push
