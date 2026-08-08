@@ -15,6 +15,5 @@ __pycache__/
 .vscode/
 .idea/
 
-# Archivos personales de prueba y apuntes
-pruebas.py
+# Archivos personales de apuntes
 lista.txt
