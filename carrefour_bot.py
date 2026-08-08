@@ -22,7 +22,7 @@ def limpiar_funcion(dato):
 def calcular_variacion(dato1, dato2):
     if not dato2 or dato2 == 0:
         return 0.0
-    return round(((dato1 - dato2) / dato2) * 100, 2)
+    return round(((float(dato1) - float(dato2)) / float(dato2)) * 100, 2)
 
 def calcular_estado(variacion):
     if variacion > 0: return "subio"
@@ -45,33 +45,33 @@ def enviar_telegram(mensaje):
         print(f"Error enviando mensaje a Telegram: {e}")
 
 # ---------------------------------------------------------
-# ETAPA 1: BASE DE DATOS Y LECTURA
+# ETAPA 1: LECTURA DE BASE DE DATOS
 # ---------------------------------------------------------
 conn = psycopg2.connect(DATABASE_URL)
 cursor = conn.cursor()
 
-# Cargar únicamente los productos activos
+# Cargar lista de productos activos
 cursor.execute("SELECT id, nombre, url FROM productos WHERE activo = TRUE")
 productos = cursor.fetchall()
 
-# Obtener los precios anteriores para calcular variaciones
+# Cargar historial previo casteando los valores a float
 cursor.execute("""
     SELECT DISTINCT ON (producto_id) producto_id, precio 
     FROM historial_precios 
     WHERE fecha < CURRENT_DATE 
     ORDER BY producto_id, fecha DESC
 """)
-precios_ayer = dict(cursor.fetchall())
+precios_ayer = {prod_id: float(precio) for prod_id, precio in cursor.fetchall()}
 
 cursor.execute("""
     SELECT DISTINCT ON (producto_id) producto_id, precio 
     FROM historial_precios 
     ORDER BY producto_id, fecha ASC
 """)
-precios_dia1 = dict(cursor.fetchall())
+precios_dia1 = {prod_id: float(precio) for prod_id, precio in cursor.fetchall()}
 
 # ---------------------------------------------------------
-# ETAPA 2: SCRAPING BLINDADO E INSERCIÓN EN NEON
+# ETAPA 2: SCRAPING Y GUARDADO EN POSTGRES
 # ---------------------------------------------------------
 precios_hoy = {}
 fecha_actual = date.today()
@@ -88,23 +88,21 @@ with sync_playwright() as p:
 
     for prod_id, nombre, url in productos:
         try:
-            page.goto(url, wait_until="domcontentloaded", timeout=30000)
+            page.goto(url, wait_until="domcontentloaded")
             contenedor = page.locator("span.valtech-carrefourar-product-price-0-x-sellingPrice")
             
-            if contenedor.count() > 0:
-                dato = contenedor.locator("span.valtech-carrefourar-product-price-0-x-currencyContainer").inner_text()
-                precio = limpiar_funcion(dato)
-                precios_hoy[prod_id] = {"nombre": nombre, "precio": precio}
+            dato = contenedor.locator("span.valtech-carrefourar-product-price-0-x-currencyContainer").inner_text()
+            precio = limpiar_funcion(dato)
+            precios_hoy[prod_id] = {"nombre": nombre, "precio": precio}
 
-                # Insertar o actualizar el precio del día en la BD
-                cursor.execute("""
-                    INSERT INTO historial_precios (producto_id, fecha, precio)
-                    VALUES (%s, %s, %s)
-                    ON CONFLICT (producto_id, fecha) 
-                    DO UPDATE SET precio = EXCLUDED.precio;
-                """, (prod_id, fecha_actual, precio))
-            else:
-                print(f"⚠️ Sin precio/stock para: {nombre}")
+            # Guardar o actualizar en Neon
+            cursor.execute("""
+                INSERT INTO historial_precios (producto_id, fecha, precio)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (producto_id, fecha) 
+                DO UPDATE SET precio = EXCLUDED.precio;
+            """, (prod_id, fecha_actual, precio))
+
         except Exception as e:
             print(f"❌ Error scraping {nombre}: {e}")
 
