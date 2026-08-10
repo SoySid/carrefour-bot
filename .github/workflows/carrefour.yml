@@ -1,9 +1,9 @@
 ﻿name: Scrape Carrefour Daily
 
 on:
-  schedule:
-    - cron: "0 9 * * *"
-  workflow_dispatch:
+  workflow_dispatch: # Permite dispararlo vía API a la hora exacta
+  # schedule:
+  #   - cron: "0 9 * * *"
 
 jobs:
   scrape:
