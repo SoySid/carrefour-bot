@@ -127,9 +127,11 @@ for prod_id, data in precios_hoy.items():
     var_dia = calcular_variacion(precio_h, precio_a)
     var_acum = calcular_variacion(precio_h, precio_d1)
 
-    lineas.append(
-        f"• *{nombre}*: ${precio_h:.2f} | *Día:* {var_dia:+.2f}% ({calcular_estado(var_dia)}) | *Acum:* {var_acum:+.2f}% ({calcular_estado(var_acum)})"
-    )
+    # Filtrar si hubo variación de precio en el día (subió o bajó)
+    if var_dia != 0:
+        lineas.append(
+            f"• *{nombre}*: ${precio_h:.2f} | *Día:* {var_dia:+.2f}% ({calcular_estado(var_dia)}) | *Acum:* {var_acum:+.2f}% ({calcular_estado(var_acum)})"
+        )
 
     if prod_id in precios_ayer:
         acum_hoy_ayer += precio_h
@@ -138,6 +140,10 @@ for prod_id, data in precios_hoy.items():
     if prod_id in precios_dia1:
         acum_hoy_dia1 += precio_h
         acum_dia1 += precio_d1
+
+# Si no hubo cambios de precio en ningún producto
+if len(lineas) == 1:
+    lineas.append("No hubo productos con variación de precio en el día.")
 
 var_dia_canasta = calcular_variacion(acum_hoy_ayer, acum_ayer)
 var_acum_canasta = calcular_variacion(acum_hoy_dia1, acum_dia1)
