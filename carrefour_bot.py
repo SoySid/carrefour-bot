@@ -173,7 +173,7 @@ def process_and_save_data():
     psycopg2.extras.execute_values(
         cursor,
         """
-        INSERT INTO productos (id, nombre, categoria, url, activo)
+        INSERT INTO productos (id, nombre, categoria, url)
         VALUES %s
         ON CONFLICT (id) DO UPDATE SET
             nombre = EXCLUDED.nombre,
