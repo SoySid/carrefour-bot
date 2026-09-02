@@ -2,6 +2,7 @@ import os
 import requests
 import time
 import random
+import concurrent.futures
 from datetime import date
 from dotenv import load_dotenv
 import psycopg2
@@ -53,7 +54,7 @@ def init_db(cursor):
     ALTER TABLE productos ADD COLUMN IF NOT EXISTS categoria VARCHAR(100);
     """)
 
-def fetch_products_for_category(category_id, category_name):
+def fetch_products_for_category(category_id, category_name, session):
     products = []
     _from = 0
     _to = 49
@@ -68,14 +69,26 @@ def fetch_products_for_category(category_id, category_name):
         }
 
         try:
-            response = requests.get(url, headers=headers, timeout=10)
+            # Retroceso exponencial para errores 429 y generales
+            max_retries = 5
+            base_wait = 2
+
+            for intento in range(max_retries):
+                response = session.get(url, headers=headers, timeout=10)
+
+                if response.status_code in (200, 206):
+                    break
+
+                print(f"  Error al obtener {url}: Código HTTP {response.status_code}. Intento {intento+1} de {max_retries}")
+                if response.status_code == 429 or response.status_code >= 500:
+                    wait_time = base_wait * (2 ** intento) + random.uniform(0, 1)
+                    print(f"  Esperando {wait_time:.2f} segundos antes de reintentar... (Anti-bloqueo)")
+                    time.sleep(wait_time)
+                else:
+                    break
 
             if response.status_code not in (200, 206):
-                print(f"  Error fetching {url}: {response.status_code}")
-                # Wait longer on error and try again if it's 429
-                if response.status_code == 429:
-                    time.sleep(5)
-                    continue
+                print(f"  No se pudo obtener {url} después de varios intentos. Se omite.")
                 break
 
             data = response.json()
@@ -122,25 +135,36 @@ def fetch_products_for_category(category_id, category_name):
     return products
 
 def process_and_save_data():
-    conn = psycopg2.connect(DATABASE_URL)
-    cursor = conn.cursor()
-
-    init_db(cursor)
-
     # 1. Fetch products from API for all target categories
     all_products_today = []
 
-    for cat_id, cat_name in TARGET_CATEGORIES.items():
-        products = fetch_products_for_category(cat_id, cat_name)
-        all_products_today.extend(products)
+    # Usar requests.Session para reutilizar conexiones y hacer peticiones más rápidas
+    with requests.Session() as session:
+        # Usar ThreadPoolExecutor para obtener categorías en paralelo
+        max_workers = 4
+        print(f"Usando {max_workers} hilos para escanear en paralelo...")
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Crear una lista de tareas futuras (futures)
+            futures = [executor.submit(fetch_products_for_category, cat_id, cat_name, session) for cat_id, cat_name in TARGET_CATEGORIES.items()]
+
+            # Recopilar los resultados a medida que se completan
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    products = future.result()
+                    all_products_today.extend(products)
+                except Exception as e:
+                    print(f"  Error en el hilo de procesamiento: {e}")
 
     print(f"\nTotal products fetched: {len(all_products_today)}")
 
     if not all_products_today:
         print("No products fetched, aborting.")
-        cursor.close()
-        conn.close()
         return None, None, []
+
+    print("Conectando a la base de datos para guardar los resultados...")
+    conn = psycopg2.connect(DATABASE_URL)
+    cursor = conn.cursor()
+    init_db(cursor)
 
     # 2. Save products and prices to DB
     fecha_actual = date.today()
