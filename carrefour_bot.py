@@ -70,7 +70,7 @@ def fetch_products_for_category(category_id, category_name):
         try:
             response = requests.get(url, headers=headers, timeout=10)
 
-            if response.status_code != 200:
+            if response.status_code not in (200, 206):
                 print(f"  Error fetching {url}: {response.status_code}")
                 # Wait longer on error and try again if it's 429
                 if response.status_code == 429:
@@ -140,7 +140,7 @@ def process_and_save_data():
         print("No products fetched, aborting.")
         cursor.close()
         conn.close()
-        return []
+        return None, None, []
 
     # 2. Save products and prices to DB
     fecha_actual = date.today()
@@ -319,12 +319,14 @@ def generate_and_send_report(conn, cursor, all_products_today):
                 if subidas:
                     lineas.append("  🔺 *Top Subidas:*")
                     for v in subidas:
-                        lineas.append(f"    - {v['nombre']}: +{v['var_dia']}% (${v['precio']})")
+                        nombre_safe = v['nombre'].replace('*', '').replace('_', '').replace('[', '').replace(']', '')
+                    lineas.append(f"    - {nombre_safe}: +{v['var_dia']}% (${v['precio']})")
 
                 if bajadas:
                     lineas.append("  🔻 *Top Bajadas:*")
                     for v in bajadas:
-                        lineas.append(f"    - {v['nombre']}: {v['var_dia']}% (${v['precio']})")
+                        nombre_safe = v['nombre'].replace('*', '').replace('_', '').replace('[', '').replace(']', '')
+                    lineas.append(f"    - {nombre_safe}: {v['var_dia']}% (${v['precio']})")
 
             lineas.append("") # Línea en blanco
 
