@@ -167,6 +167,11 @@ def process_and_save_data():
     init_db(cursor)
 
     # 2. Save products and prices to DB
+    # Establish connection AFTER fetching products to avoid SSL timeout on Neon
+    conn = psycopg2.connect(DATABASE_URL)
+    cursor = conn.cursor()
+
+    init_db(cursor)
     fecha_actual = date.today()
 
     productos_data = [(p['id'], p['nombre'], p['categoria'], p['url']) for p in all_products_today]
@@ -344,13 +349,13 @@ def generate_and_send_report(conn, cursor, all_products_today):
                     lineas.append("  🔺 *Top Subidas:*")
                     for v in subidas:
                         nombre_safe = v['nombre'].replace('*', '').replace('_', '').replace('[', '').replace(']', '')
-                    lineas.append(f"    - {nombre_safe}: +{v['var_dia']}% (${v['precio']})")
+                        lineas.append(f"    - {nombre_safe}: +{v['var_dia']}% (${v['precio']})")
 
                 if bajadas:
                     lineas.append("  🔻 *Top Bajadas:*")
                     for v in bajadas:
                         nombre_safe = v['nombre'].replace('*', '').replace('_', '').replace('[', '').replace(']', '')
-                    lineas.append(f"    - {nombre_safe}: {v['var_dia']}% (${v['precio']})")
+                        lineas.append(f"    - {nombre_safe}: {v['var_dia']}% (${v['precio']})")
 
             lineas.append("") # Línea en blanco
 
