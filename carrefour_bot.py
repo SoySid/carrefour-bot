@@ -145,12 +145,6 @@ def process_and_save_data():
     # 2. Save products and prices to DB
     fecha_actual = date.today()
 
-    # Deduplicate by ID to prevent PostgreSQL CardinalityViolation during batch insert
-    unique_products = {}
-    for p in all_products_today:
-        unique_products[p['id']] = p
-    all_products_today = list(unique_products.values())
-
     productos_data = [(p['id'], p['nombre'], p['categoria'], p['url']) for p in all_products_today]
     psycopg2.extras.execute_values(
         cursor,
