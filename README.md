@@ -1,19 +1,18 @@
 # Carrefour Price Monitor
 
-Bot para monitorear precios en Carrefour Argentina. Corre una vez al día con GitHub Actions, guarda los precios en una base de datos PostgreSQL (Neon) y envía un reporte por Telegram cuando hay cambios.
+Bot para monitorear precios en Carrefour Argentina de miles de productos de supermercado. Corre una vez al día con GitHub Actions, guarda los precios en una base de datos PostgreSQL (Neon) y envía un reporte resumido por Telegram agrupado por categorías.
 
 ## Qué hace
 
-- Scrapea los precios actuales usando Playwright.
-- Guarda el historial diario en la base de datos.
-- Compara los precios de hoy con los de ayer y con el primer registro cargado.
-- Envía una alerta a Telegram solo con los productos que cambiaron de precio en el día.
-- Muestra el impacto en el costo total de la canasta monitoreada.
+- Extrae los catálogos completos (Almacén, Lácteos, Carnes, Bebidas, etc.) usando la API de VTEX de Carrefour (mucho más rápido que scrapers visuales).
+- Guarda el historial diario y el registro de productos en la base de datos de manera automática.
+- Compara los precios de hoy con los de ayer y con el primer registro (Día 1).
+- Envía un reporte condensado a Telegram mostrando el porcentaje de variación global, la variación por cada categoría, y el top 3 de los productos que más subieron y bajaron de precio en cada una, evitando hacer spam.
 
 ## Stack
 
 - **Python 3.11**
-- **Playwright** (scraping)
+- **Requests** (consumo de API)
 - **PostgreSQL** (Neon)
 - **Telegram Bot API**
 - **GitHub Actions** (ejecución diaria)
