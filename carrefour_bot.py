@@ -49,6 +49,11 @@ def init_db(cursor):
         PRIMARY KEY (producto_id, fecha)
     );
     """)
+    # Add categoria column if upgrading from previous version
+    # Lo ejecutamos primero para asegurar que la columna exista antes de intentar alterar su tipo
+    cursor.execute("""
+    ALTER TABLE productos ADD COLUMN IF NOT EXISTS categoria TEXT;
+    """)
     # Modificar los tipos de las columnas a TEXT para evitar "value too long for type character varying"
     # Se hace de forma segura para no romper la clave foránea (foreign key constraints)
     cursor.execute("""
@@ -73,10 +78,6 @@ def init_db(cursor):
                 FOREIGN KEY (producto_id) REFERENCES productos(id);
         END IF;
     END $$;
-    """)
-    # Add categoria column if upgrading from previous version
-    cursor.execute("""
-    ALTER TABLE productos ADD COLUMN IF NOT EXISTS categoria TEXT;
     """)
     # Drop unique URL constraint if it exists to prevent errors with identical URLs across different products
     cursor.execute("""
