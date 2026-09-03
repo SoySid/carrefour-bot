@@ -50,11 +50,29 @@ def init_db(cursor):
     );
     """)
     # Modificar los tipos de las columnas a TEXT para evitar "value too long for type character varying"
+    # Se hace de forma segura para no romper la clave foránea (foreign key constraints)
     cursor.execute("""
-    ALTER TABLE productos ALTER COLUMN id TYPE TEXT;
-    ALTER TABLE productos ALTER COLUMN nombre TYPE TEXT;
-    ALTER TABLE productos ALTER COLUMN categoria TYPE TEXT;
-    ALTER TABLE historial_precios ALTER COLUMN producto_id TYPE TEXT;
+    DO $$
+    BEGIN
+        -- Verificar si las columnas no son TEXT para ejecutar la migración
+        IF EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_name = 'productos' AND column_name = 'id' AND data_type != 'text'
+        ) THEN
+            -- Eliminar temporalmente la foreign key
+            ALTER TABLE historial_precios DROP CONSTRAINT IF EXISTS historial_precios_producto_id_fkey;
+
+            -- Cambiar tipos a TEXT forzando el casting
+            ALTER TABLE productos ALTER COLUMN id TYPE TEXT USING id::TEXT;
+            ALTER TABLE productos ALTER COLUMN nombre TYPE TEXT;
+            ALTER TABLE productos ALTER COLUMN categoria TYPE TEXT;
+            ALTER TABLE historial_precios ALTER COLUMN producto_id TYPE TEXT USING producto_id::TEXT;
+
+            -- Volver a añadir la foreign key
+            ALTER TABLE historial_precios ADD CONSTRAINT historial_precios_producto_id_fkey
+                FOREIGN KEY (producto_id) REFERENCES productos(id);
+        END IF;
+    END $$;
     """)
     # Add categoria column if upgrading from previous version
     cursor.execute("""
