@@ -34,24 +34,31 @@ def init_db(cursor):
     # Setup tables if they don't exist
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS productos (
-        id VARCHAR(50) PRIMARY KEY,
-        nombre VARCHAR(255),
-        categoria VARCHAR(100),
+        id TEXT PRIMARY KEY,
+        nombre TEXT,
+        categoria TEXT,
         url TEXT,
         activo BOOLEAN DEFAULT TRUE
     );
     """)
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS historial_precios (
-        producto_id VARCHAR(50) REFERENCES productos(id),
+        producto_id TEXT REFERENCES productos(id),
         fecha DATE,
         precio NUMERIC(10, 2),
         PRIMARY KEY (producto_id, fecha)
     );
     """)
+    # Modificar los tipos de las columnas a TEXT para evitar "value too long for type character varying"
+    cursor.execute("""
+    ALTER TABLE productos ALTER COLUMN id TYPE TEXT;
+    ALTER TABLE productos ALTER COLUMN nombre TYPE TEXT;
+    ALTER TABLE productos ALTER COLUMN categoria TYPE TEXT;
+    ALTER TABLE historial_precios ALTER COLUMN producto_id TYPE TEXT;
+    """)
     # Add categoria column if upgrading from previous version
     cursor.execute("""
-    ALTER TABLE productos ADD COLUMN IF NOT EXISTS categoria VARCHAR(100);
+    ALTER TABLE productos ADD COLUMN IF NOT EXISTS categoria TEXT;
     """)
     # Drop unique URL constraint if it exists to prevent errors with identical URLs across different products
     cursor.execute("""
@@ -78,20 +85,32 @@ def fetch_products_for_category(category_id, category_name, session):
             base_wait = 2
 
             for intento in range(max_retries):
-                response = session.get(url, headers=headers, timeout=10)
+                try:
+                    response = session.get(url, headers=headers, timeout=30)
 
-                if response.status_code in (200, 206):
-                    break
+                    if response.status_code in (200, 206):
+                        break
+                except requests.exceptions.RequestException as e:
+                    print(f"  Error de red al obtener {url}: {e}. Intento {intento+1} de {max_retries}")
+                    if intento == max_retries - 1:
+                        raise e # Re-lanzar la excepción si es el último intento
+                    response = None # Marcar como fallido para que aplique el retry
 
-                print(f"  Error al obtener {url}: Código HTTP {response.status_code}. Intento {intento+1} de {max_retries}")
-                if response.status_code == 429 or response.status_code >= 500:
-                    wait_time = base_wait * (2 ** intento) + random.uniform(0, 1)
-                    print(f"  Esperando {wait_time:.2f} segundos antes de reintentar... (Anti-bloqueo)")
-                    time.sleep(wait_time)
+                if response is not None:
+                    print(f"  Error al obtener {url}: Código HTTP {response.status_code}. Intento {intento+1} de {max_retries}")
+                    if response.status_code == 429 or response.status_code >= 500:
+                        wait_time = base_wait * (2 ** intento) + random.uniform(0, 1)
+                        print(f"  Esperando {wait_time:.2f} segundos antes de reintentar... (Anti-bloqueo)")
+                        time.sleep(wait_time)
+                    else:
+                        break
                 else:
-                    break
+                    # Retry logic for network exceptions
+                    wait_time = base_wait * (2 ** intento) + random.uniform(0, 1)
+                    print(f"  Esperando {wait_time:.2f} segundos antes de reintentar por error de red...")
+                    time.sleep(wait_time)
 
-            if response.status_code not in (200, 206):
+            if response is None or response.status_code not in (200, 206):
                 print(f"  No se pudo obtener {url} después de varios intentos. Se omite.")
                 break
 
