@@ -201,6 +201,15 @@ def fetch_products_for_task(category_path, parent_cat_name, task_name, limit=Non
                     if not commertial_offer:
                         continue
 
+                    # Filtro estricto de stock: solo productos efectivamente disponibles para compra
+                    try:
+                        available_qty = int(float(commertial_offer.get("AvailableQuantity", 0)))
+                    except (ValueError, TypeError):
+                        available_qty = 0
+
+                    if available_qty <= 0:
+                        continue
+
                     raw_price = commertial_offer.get("Price")
                     if raw_price is None:
                         continue
@@ -385,17 +394,52 @@ def generate_and_send_report(conn, cursor, all_products_today, send_telegram_fla
     """)
     precios_ayer = {prod_id: float(precio) for prod_id, precio in cursor.fetchall()}
 
-    # Cargar primer registro histórico (Día 1)
+    # Cargar base del mes (cierre del mes previo o primer registro del mes en curso)
     cursor.execute("""
         SELECT DISTINCT ON (producto_id) producto_id, precio
         FROM historial_precios
+        WHERE fecha < DATE_TRUNC('month', CURRENT_DATE)
+        ORDER BY producto_id, fecha DESC
+    """)
+    precios_mes_ant = {prod_id: float(precio) for prod_id, precio in cursor.fetchall()}
+
+    cursor.execute("""
+        SELECT DISTINCT ON (producto_id) producto_id, precio
+        FROM historial_precios
+        WHERE fecha >= DATE_TRUNC('month', CURRENT_DATE)
         ORDER BY producto_id, fecha ASC
     """)
-    precios_dia1 = {prod_id: float(precio) for prod_id, precio in cursor.fetchall()}
+    precios_mes_act = {prod_id: float(precio) for prod_id, precio in cursor.fetchall()}
+
+    # Base del mes: si existía antes del 1° del mes se usa el cierre anterior; si no, el primer registro de este mes
+    precios_base_mes = {**precios_mes_act, **precios_mes_ant}
+
+    MESES_ES = {
+        1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
+        5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
+        9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
+    }
+    nombre_mes = MESES_ES.get(fecha_actual.month, "")
+
+    # Caso especial: Primer día en que corre el bot (no hay registros previos para comparar)
+    if not precios_ayer:
+        lineas = [
+            f"📊 <b>Reporte Carrefour - {fecha_actual}</b>\n",
+            "🛒 <b>CANASTA GENERAL</b>",
+            f"📌 <i>Primer día de escaneo: {len(all_products_today):,} productos registrados como base inicial.</i>",
+            f"<i>A partir de mañana se mostrarán las variaciones del día y el acumulado de {nombre_mes}.</i>"
+        ]
+        informe = "\n".join(lineas)
+        if send_telegram_flag:
+            enviar_telegram(informe, parse_mode="HTML")
+        else:
+            print("\n--- REPORTE GENERADO (MODO SIN TELEGRAM) ---")
+            print(informe)
+        return
 
     categorias_stats = {}
     acum_hoy_ayer, acum_ayer = 0.0, 0.0
-    acum_hoy_dia1, acum_dia1 = 0.0, 0.0
+    acum_hoy_mes, acum_mes = 0.0, 0.0
 
     for p in all_products_today:
         prod_id = p["id"]
@@ -404,12 +448,12 @@ def generate_and_send_report(conn, cursor, all_products_today, send_telegram_fla
         precio_h = p["precio"]
 
         precio_a = precios_ayer.get(prod_id)
-        precio_d1 = precios_dia1.get(prod_id)
+        precio_m = precios_base_mes.get(prod_id)
 
         if cat not in categorias_stats:
             categorias_stats[cat] = {
                 "acum_hoy_ayer": 0.0, "acum_ayer": 0.0,
-                "acum_hoy_dia1": 0.0, "acum_dia1": 0.0,
+                "acum_hoy_mes": 0.0, "acum_mes": 0.0,
                 "productos_variacion_dia": []
             }
 
@@ -428,24 +472,26 @@ def generate_and_send_report(conn, cursor, all_products_today, send_telegram_fla
                     "var_dia": var_dia
                 })
 
-        # Variación Acumulada
-        if precio_d1 is not None and precio_d1 > 0:
-            categorias_stats[cat]["acum_hoy_dia1"] += precio_h
-            categorias_stats[cat]["acum_dia1"] += precio_d1
-            acum_hoy_dia1 += precio_h
-            acum_dia1 += precio_d1
+        # Variación Acumulada del Mes en Curso
+        if precio_m is not None and precio_m > 0:
+            categorias_stats[cat]["acum_hoy_mes"] += precio_h
+            categorias_stats[cat]["acum_mes"] += precio_m
+            acum_hoy_mes += precio_h
+            acum_mes += precio_m
 
     # Formatear el reporte en HTML
     lineas = [f"📊 <b>Reporte Carrefour - {fecha_actual}</b>\n"]
 
     # Canasta General
     var_dia_general = calcular_variacion(acum_hoy_ayer, acum_ayer)
-    var_acum_general = calcular_variacion(acum_hoy_dia1, acum_dia1)
+    var_mes_general = calcular_variacion(acum_hoy_mes, acum_mes)
 
     estado_dia = "📈" if var_dia_general > 0 else "📉" if var_dia_general < 0 else "➖"
+    estado_mes = "📈" if var_mes_general > 0 else "📉" if var_mes_general < 0 else "➖"
+
     lineas.append("🛒 <b>CANASTA GENERAL</b>")
     lineas.append(f"• Día: {var_dia_general:+.2f}% {estado_dia}")
-    lineas.append(f"• Acumulado: {var_acum_general:+.2f}%\n")
+    lineas.append(f"• Acumulado Mes ({nombre_mes}): {var_mes_general:+.2f}% {estado_mes}\n")
 
     # Por categoría (ordenadas según orden natural de categorías)
     cat_order = list(TARGET_CATEGORIES.values())
@@ -457,12 +503,13 @@ def generate_and_send_report(conn, cursor, all_products_today, send_telegram_fla
     hubo_variaciones = False
     for cat, stats in sorted_cats:
         var_cat_dia = calcular_variacion(stats["acum_hoy_ayer"], stats["acum_ayer"])
+        var_cat_mes = calcular_variacion(stats["acum_hoy_mes"], stats["acum_mes"])
         variaciones = stats["productos_variacion_dia"]
 
-        if var_cat_dia != 0 or variaciones:
+        if var_cat_dia != 0 or var_cat_mes != 0 or variaciones:
             hubo_variaciones = True
             estado_cat = "🔴" if var_cat_dia > 0 else "🟢" if var_cat_dia < 0 else "⚪"
-            lineas.append(f"🏷️ <b>{html.escape(cat)}: {var_cat_dia:+.2f}% {estado_cat}</b>")
+            lineas.append(f"🏷️ <b>{html.escape(cat)}: {var_cat_dia:+.2f}% {estado_cat}</b> (Mes: {var_cat_mes:+.2f}%)")
 
             if variaciones:
                 variaciones.sort(key=lambda x: x["var_dia"], reverse=True)
