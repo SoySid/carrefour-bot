@@ -17,6 +17,14 @@ from urllib3.util.retry import Retry
 import psycopg2
 import psycopg2.extras
 
+# Asegurar compatibilidad UTF-8 para emojis en consola de Windows
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 # Configuración de Logging
 logging.basicConfig(
     level=logging.INFO,
@@ -439,36 +447,37 @@ def generate_and_send_report(conn, cursor, all_products_today, send_telegram_fla
     lineas.append(f"• Día: {var_dia_general:+.2f}% {estado_dia}")
     lineas.append(f"• Acumulado: {var_acum_general:+.2f}%\n")
 
-    # Por categoría
+    # Por categoría (ordenadas según orden natural de categorías)
+    cat_order = list(TARGET_CATEGORIES.values())
+    sorted_cats = sorted(
+        categorias_stats.items(),
+        key=lambda x: cat_order.index(x[0]) if x[0] in cat_order else 99
+    )
+
     hubo_variaciones = False
-    for cat, stats in sorted(categorias_stats.items()):
+    for cat, stats in sorted_cats:
         var_cat_dia = calcular_variacion(stats["acum_hoy_ayer"], stats["acum_ayer"])
-        var_cat_acum = calcular_variacion(stats["acum_hoy_dia1"], stats["acum_dia1"])
         variaciones = stats["productos_variacion_dia"]
 
         if var_cat_dia != 0 or variaciones:
             hubo_variaciones = True
             estado_cat = "🔴" if var_cat_dia > 0 else "🟢" if var_cat_dia < 0 else "⚪"
-            lineas.append(f"🏷️ <b>{html.escape(cat)}</b>")
-            lineas.append(f"• Variación Día: {var_cat_dia:+.2f}% {estado_cat}")
-            lineas.append(f"• Variación Acum.: {var_cat_acum:+.2f}%")
+            lineas.append(f"🏷️ <b>{html.escape(cat)}: {var_cat_dia:+.2f}% {estado_cat}</b>")
 
             if variaciones:
                 variaciones.sort(key=lambda x: x["var_dia"], reverse=True)
-                subidas = [v for v in variaciones if v["var_dia"] > 0][:3]
-                bajadas = sorted([v for v in variaciones if v["var_dia"] < 0], key=lambda x: x["var_dia"])[:3]
+                subidas = [v for v in variaciones if v["var_dia"] > 0][:1]
+                bajadas = sorted([v for v in variaciones if v["var_dia"] < 0], key=lambda x: x["var_dia"])[:1]
 
                 if subidas:
-                    lineas.append("  🔺 <b>Top Subidas:</b>")
-                    for v in subidas:
-                        nombre_safe = html.escape(v["nombre"])
-                        lineas.append(f"    - {nombre_safe}: +{v['var_dia']:.2f}% (${v['precio']:,.2f})")
+                    s = subidas[0]
+                    nombre_safe = html.escape(s["nombre"])
+                    lineas.append(f"  🔺 {nombre_safe}: +{s['var_dia']:.2f}% (${s['precio']:,.2f})")
 
                 if bajadas:
-                    lineas.append("  🔻 <b>Top Bajadas:</b>")
-                    for v in bajadas:
-                        nombre_safe = html.escape(v["nombre"])
-                        lineas.append(f"    - {nombre_safe}: {v['var_dia']:.2f}% (${v['precio']:,.2f})")
+                    b = bajadas[0]
+                    nombre_safe = html.escape(b["nombre"])
+                    lineas.append(f"  🔻 {nombre_safe}: {b['var_dia']:.2f}% (${b['precio']:,.2f})")
 
             lineas.append("")
 
