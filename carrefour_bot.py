@@ -1,12 +1,28 @@
 import os
-import requests
+import sys
 import time
 import random
+import logging
+import argparse
+import html
+import threading
 import concurrent.futures
 from datetime import date
 from dotenv import load_dotenv
+
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
 import psycopg2
 import psycopg2.extras
+
+# Configuración de Logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
 
 load_dotenv()
 
@@ -14,7 +30,7 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Categories we care about
+# Categorías principales de Carrefour
 TARGET_CATEGORIES = {
     161: "Almacén",
     222: "Desayuno y merienda",
@@ -30,17 +46,39 @@ TARGET_CATEGORIES = {
     471: "Mascotas"
 }
 
+# Variable local por hilo para sesiones de requests (Thread-safe)
+thread_local = threading.local()
+
+def get_session():
+    """Retorna una sesión requests aislada por hilo con reintentos exponenciales automáticos."""
+    if not hasattr(thread_local, "session"):
+        session = requests.Session()
+        retries = Retry(
+            total=5,
+            backoff_factor=1.5,
+            status_forcelist=[429, 500, 502, 503, 504],
+            raise_on_status=False
+        )
+        adapter = HTTPAdapter(max_retries=retries, pool_connections=10, pool_maxsize=10)
+        session.mount("https://", adapter)
+        session.mount("http://", adapter)
+        thread_local.session = session
+    return thread_local.session
+
 def init_db(cursor):
-    # Setup tables if they don't exist
+    """Inicializa tablas, columnas e índices necesarios en PostgreSQL."""
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS productos (
         id VARCHAR(50) PRIMARY KEY,
-        nombre VARCHAR(255),
+        nombre TEXT,
         categoria VARCHAR(100),
         url TEXT,
-        activo BOOLEAN DEFAULT TRUE
+        activo BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     """)
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS historial_precios (
         producto_id VARCHAR(50) REFERENCES productos(id),
@@ -49,52 +87,89 @@ def init_db(cursor):
         PRIMARY KEY (producto_id, fecha)
     );
     """)
-    # Add categoria column if upgrading from previous version
+
+    # Migraciones si las columnas no existen o para ajustar tipos
     cursor.execute("""
     ALTER TABLE productos ADD COLUMN IF NOT EXISTS categoria VARCHAR(100);
+    ALTER TABLE productos ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
+    ALTER TABLE productos ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+    ALTER TABLE productos ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+    ALTER TABLE productos ALTER COLUMN nombre TYPE TEXT;
     """)
 
-def fetch_products_for_category(category_id, category_name, session):
+    # Índices para acelerar búsquedas y reportes históricos
+    cursor.execute("""
+    CREATE INDEX IF NOT EXISTS idx_historial_precios_fecha ON historial_precios (fecha);
+    CREATE INDEX IF NOT EXISTS idx_historial_precios_prod_fecha_desc ON historial_precios (producto_id, fecha DESC);
+    CREATE INDEX IF NOT EXISTS idx_historial_precios_prod_fecha_asc ON historial_precios (producto_id, fecha ASC);
+    """)
+
+def discover_category_tasks(target_categories, use_subcategories=True):
+    """
+    Obtiene las tareas de escaneo. Si use_subcategories es True, consulta el árbol VTEX
+    y desglosa en subcategorías con su ruta padre (fq=C:/padre/hijo/) para evitar el tope
+    de 2500 productos de VTEX y capturar los productos correctamente.
+    """
+    if not use_subcategories:
+        return [(str(cat_id), name, name) for cat_id, name in target_categories.items()]
+
+    try:
+        session = get_session()
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "application/json"
+        }
+        resp = session.get("https://www.carrefour.com.ar/api/catalog_system/pub/category/tree/2", headers=headers, timeout=15)
+        if resp.status_code == 200:
+            tree_data = resp.json()
+            tree_map = {c["id"]: c for c in tree_data}
+            tasks = []
+            for cat_id, cat_name in target_categories.items():
+                cat_info = tree_map.get(cat_id)
+                children = cat_info.get("children", []) if cat_info else []
+                if children:
+                    for child in children:
+                        path = f"{cat_id}/{child['id']}"
+                        tasks.append((path, cat_name, child.get("name", cat_name)))
+                else:
+                    tasks.append((str(cat_id), cat_name, cat_name))
+            logging.info(f"Árbol de categorías VTEX cargado: {len(tasks)} subcategorías encontradas.")
+            return tasks
+    except Exception as e:
+        logging.warning(f"No se pudo obtener el árbol de subcategorías ({e}). Se usarán las categorías principales.")
+
+    return [(str(cat_id), name, name) for cat_id, name in target_categories.items()]
+
+def fetch_products_for_task(category_path, parent_cat_name, task_name, limit=None):
+    """
+    Descarga los productos de una categoría o subcategoría dada paginando de a 50 ítems.
+    """
+    session = get_session()
     products = []
     _from = 0
     _to = 49
-    max_products = 2500  # API limit
+    max_vtex_limit = 2500  # Límite por endpoint en VTEX
 
-    print(f"Scraping category: {category_name} (ID: {category_id})")
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "application/json"
+    }
 
-    while _from < max_products:
-        url = f"https://www.carrefour.com.ar/api/catalog_system/pub/products/search?fq=C:/{category_id}/&_from={_from}&_to={_to}"
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        }
+    logging.info(f"Escaneando: {parent_cat_name} -> {task_name} (Ruta: {category_path})")
+
+    while _from < max_vtex_limit:
+        url = f"https://www.carrefour.com.ar/api/catalog_system/pub/products/search?fq=C:/{category_path}/&_from={_from}&_to={_to}"
 
         try:
-            # Retroceso exponencial para errores 429 y generales
-            max_retries = 5
-            base_wait = 2
-
-            for intento in range(max_retries):
-                response = session.get(url, headers=headers, timeout=10)
-
-                if response.status_code in (200, 206):
-                    break
-
-                print(f"  Error al obtener {url}: Código HTTP {response.status_code}. Intento {intento+1} de {max_retries}")
-                if response.status_code == 429 or response.status_code >= 500:
-                    wait_time = base_wait * (2 ** intento) + random.uniform(0, 1)
-                    print(f"  Esperando {wait_time:.2f} segundos antes de reintentar... (Anti-bloqueo)")
-                    time.sleep(wait_time)
-                else:
-                    break
+            response = session.get(url, headers=headers, timeout=15)
 
             if response.status_code not in (200, 206):
-                print(f"  No se pudo obtener {url} después de varios intentos. Se omite.")
+                logging.warning(f"  [{task_name}] HTTP {response.status_code} en {url}. Finalizando tarea.")
                 break
 
             data = response.json()
-
-            if not data:
-                break # No more products in this category
+            if not data or not isinstance(data, list):
+                break
 
             for item in data:
                 try:
@@ -102,94 +177,116 @@ def fetch_products_for_category(category_id, category_name, session):
                     product_name = item.get("productName")
                     product_url = item.get("link", "")
 
-                    # Carrefour API stores price inside items -> sellers -> commertialOffer -> Price
-                    price = item["items"][0]["sellers"][0]["commertialOffer"]["Price"]
+                    if product_url and not product_url.startswith("http"):
+                        product_url = f"https://www.carrefour.com.ar{product_url}"
 
-                    if product_id and product_name and price is not None:
+                    items_list = item.get("items")
+                    if not items_list:
+                        continue
+
+                    primary_item = items_list[0]
+                    sellers = primary_item.get("sellers")
+                    if not sellers:
+                        continue
+
+                    commertial_offer = sellers[0].get("commertialOffer")
+                    if not commertial_offer:
+                        continue
+
+                    raw_price = commertial_offer.get("Price")
+                    if raw_price is None:
+                        continue
+
+                    price = float(raw_price)
+                    # Validar que el precio sea mayor a cero para evitar datos corruptos
+                    if price <= 0:
+                        continue
+
+                    if product_id and product_name:
                         products.append({
-                            "id": str(product_id),
-                            "nombre": product_name,
-                            "categoria": category_name,
-                            "url": product_url,
-                            "precio": float(price)
+                            "id": str(product_id).strip(),
+                            "nombre": str(product_name).strip(),
+                            "categoria": parent_cat_name,
+                            "url": str(product_url).strip(),
+                            "precio": price
                         })
-                except (IndexError, KeyError, TypeError):
-                    # Skip products with malformed data or missing prices
+
+                        if limit and len(products) >= limit:
+                            break
+                except (IndexError, KeyError, TypeError, ValueError):
                     continue
 
-            print(f"  Fetched {_from} to {_to}, got {len(data)} items")
+            if limit and len(products) >= limit:
+                break
 
             if len(data) < 50:
-                break # Reached the end of the category
+                break  # Fin del catálogo en esta subcategoría
 
             _from += 50
             _to += 50
 
-            # Be nice to the server
-            time.sleep(random.uniform(1, 2))
+            time.sleep(random.uniform(0.3, 0.7))
 
         except Exception as e:
-            print(f"  Exception while fetching {url}: {e}")
+            logging.error(f"  Excepción al consultar {url}: {e}")
             break
 
+    logging.info(f"  Completado {task_name}: {len(products)} productos encontrados.")
     return products
 
-def process_and_save_data():
-    # 1. Fetch products from API for all target categories
-    all_products_today = []
+def fetch_all_products(tasks, max_workers=4, limit=None):
+    """Ejecuta la extracción de productos en paralelo mediante un ThreadPoolExecutor."""
+    seen_products = {}
+    logging.info(f"Iniciando escaneo con {max_workers} hilos de ejecución...")
 
-    # Usar requests.Session para reutilizar conexiones y hacer peticiones más rápidas
-    with requests.Session() as session:
-        # Usar ThreadPoolExecutor para obtener categorías en paralelo
-        max_workers = 4
-        print(f"Usando {max_workers} hilos para escanear en paralelo...")
-        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-            # Crear una lista de tareas futuras (futures)
-            futures = [executor.submit(fetch_products_for_category, cat_id, cat_name, session) for cat_id, cat_name in TARGET_CATEGORIES.items()]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [
+            executor.submit(fetch_products_for_task, cat_id, parent_cat, task_name, limit)
+            for cat_id, parent_cat, task_name in tasks
+        ]
 
-            # Recopilar los resultados a medida que se completan
-            for future in concurrent.futures.as_completed(futures):
-                try:
-                    products = future.result()
-                    all_products_today.extend(products)
-                except Exception as e:
-                    print(f"  Error en el hilo de procesamiento: {e}")
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                products = future.result()
+                for p in products:
+                    # Deduplicación por ID de producto
+                    seen_products[p["id"]] = p
+            except Exception as e:
+                logging.error(f"Error en hilo de procesamiento: {e}")
 
-    print(f"\nTotal products fetched: {len(all_products_today)}")
+    return list(seen_products.values())
 
-    if not all_products_today:
-        print("No products fetched, aborting.")
-        return None, None, []
-
-    print("Conectando a la base de datos para guardar los resultados...")
-    conn = psycopg2.connect(DATABASE_URL)
-    cursor = conn.cursor()
-    init_db(cursor)
-
-    # 2. Save products and prices to DB
-    # Establish connection AFTER fetching products to avoid SSL timeout on Neon
-    conn = psycopg2.connect(DATABASE_URL)
-    cursor = conn.cursor()
-
-    init_db(cursor)
+def save_products_and_prices(conn, cursor, all_products_today):
+    """Guarda productos y precios en PostgreSQL usando inserción por lotes."""
     fecha_actual = date.today()
 
-    productos_data = [(p['id'], p['nombre'], p['categoria'], p['url']) for p in all_products_today]
+    productos_data = [
+        (p["id"], p["nombre"], p["categoria"], p["url"])
+        for p in all_products_today
+    ]
+
     psycopg2.extras.execute_values(
         cursor,
         """
-        INSERT INTO productos (id, nombre, categoria, url)
+        INSERT INTO productos (id, nombre, categoria, url, activo, updated_at)
         VALUES %s
         ON CONFLICT (id) DO UPDATE SET
             nombre = EXCLUDED.nombre,
             categoria = EXCLUDED.categoria,
             url = EXCLUDED.url,
-            activo = TRUE;
+            activo = TRUE,
+            updated_at = CURRENT_TIMESTAMP;
         """,
-        productos_data
+        productos_data,
+        template="(%s, %s, %s, %s, TRUE, CURRENT_TIMESTAMP)",
+        page_size=1000
     )
 
-    precios_data = [(p['id'], fecha_actual, p['precio']) for p in all_products_today]
+    precios_data = [
+        (p["id"], fecha_actual, p["precio"])
+        for p in all_products_today
+    ]
+
     psycopg2.extras.execute_values(
         cursor,
         """
@@ -198,55 +295,80 @@ def process_and_save_data():
         ON CONFLICT (producto_id, fecha)
         DO UPDATE SET precio = EXCLUDED.precio;
         """,
-        precios_data
+        precios_data,
+        page_size=1000
     )
 
     conn.commit()
 
-    # We return the cursor and conn so we can reuse it for generating the report
-    return conn, cursor, all_products_today
-
 def calcular_variacion(dato1, dato2):
-    if not dato2 or dato2 == 0:
+    """Calcula el porcentaje de variación entre dos valores numéricos."""
+    if not dato2 or float(dato2) <= 0:
         return 0.0
     return round(((float(dato1) - float(dato2)) / float(dato2)) * 100, 2)
 
-def enviar_telegram(mensaje):
+def chunk_message(text, max_length=4000):
+    """Divide un mensaje en partes de hasta 4000 caracteres respetando saltos de línea."""
+    chunks = []
+    current_chunk = []
+    current_length = 0
+
+    for line in text.split("\n"):
+        line_len = len(line) + 1
+        if current_length + line_len > max_length and current_chunk:
+            chunks.append("\n".join(current_chunk).strip())
+            current_chunk = [line]
+            current_length = line_len
+        else:
+            current_chunk.append(line)
+            current_length += line_len
+
+    if current_chunk:
+        chunks.append("\n".join(current_chunk).strip())
+
+    return [c for c in chunks if c]
+
+def enviar_telegram(mensaje, parse_mode="HTML"):
+    """Envía un mensaje formateado a Telegram en partes seguras."""
     if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
-        print("No se encontraron las credenciales de Telegram.")
-        print(mensaje)
+        logging.warning("No se encontraron credenciales de Telegram (TELEGRAM_TOKEN/TELEGRAM_CHAT_ID).")
+        print("\n--- MENSAJE PARA TELEGRAM ---\n", mensaje)
         return
 
-    # Chunk message if it exceeds telegram limit, splitting by newline to preserve Markdown
-    max_length = 4000
-    messages = []
-    current_msg = ""
-    for line in mensaje.split("\n"):
-        if len(current_msg) + len(line) + 1 > max_length:
-            messages.append(current_msg.strip())
-            current_msg = line + "\n"
-        else:
-            current_msg += line + "\n"
-    if current_msg.strip():
-        messages.append(current_msg.strip())
-
-    for msg in messages:
+    chunks = chunk_message(mensaje)
+    for i, msg in enumerate(chunks):
         url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
         payload = {
             "chat_id": TELEGRAM_CHAT_ID,
             "text": msg,
-            "parse_mode": "Markdown"
+            "parse_mode": parse_mode,
+            "disable_web_page_preview": True
         }
         try:
-            resp = requests.post(url, json=payload)
+            resp = requests.post(url, json=payload, timeout=15)
             resp.raise_for_status()
+            if len(chunks) > 1 and i < len(chunks) - 1:
+                time.sleep(0.5)
         except Exception as e:
-            print(f"Error enviando mensaje a Telegram: {e}")
+            logging.error(f"Error enviando mensaje a Telegram: {e}")
 
-def generate_and_send_report(conn, cursor, all_products_today):
+def notificar_error_telegram(error_msg):
+    """Notifica una alerta de falla crítica al canal de Telegram."""
+    if TELEGRAM_TOKEN and TELEGRAM_CHAT_ID:
+        fecha = date.today().isoformat()
+        escaped_err = html.escape(str(error_msg))
+        alerta = (
+            f"🚨 <b>Alerta Carrefour Bot - {fecha}</b>\n\n"
+            f"❌ Se produjo un error fatal durante la ejecución:\n"
+            f"<code>{escaped_err}</code>"
+        )
+        enviar_telegram(alerta, parse_mode="HTML")
+
+def generate_and_send_report(conn, cursor, all_products_today, send_telegram_flag=True):
+    """Calcula variaciones respecto a ayer y día 1, y envía el reporte a Telegram."""
     fecha_actual = date.today()
 
-    # Cargar historial de ayer
+    # Cargar precios anteriores más recientes (previos a la fecha de hoy)
     cursor.execute("""
         SELECT DISTINCT ON (producto_id) producto_id, precio
         FROM historial_precios
@@ -255,7 +377,7 @@ def generate_and_send_report(conn, cursor, all_products_today):
     """)
     precios_ayer = {prod_id: float(precio) for prod_id, precio in cursor.fetchall()}
 
-    # Cargar historial del día 1 (el primer precio registrado)
+    # Cargar primer registro histórico (Día 1)
     cursor.execute("""
         SELECT DISTINCT ON (producto_id) producto_id, precio
         FROM historial_precios
@@ -263,118 +385,180 @@ def generate_and_send_report(conn, cursor, all_products_today):
     """)
     precios_dia1 = {prod_id: float(precio) for prod_id, precio in cursor.fetchall()}
 
-    # Agrupar datos por categoría
     categorias_stats = {}
-
-    # Global basket
     acum_hoy_ayer, acum_ayer = 0.0, 0.0
     acum_hoy_dia1, acum_dia1 = 0.0, 0.0
 
     for p in all_products_today:
-        prod_id = p['id']
-        nombre = p['nombre']
-        cat = p['categoria']
-        precio_h = p['precio']
+        prod_id = p["id"]
+        nombre = p["nombre"]
+        cat = p["categoria"]
+        precio_h = p["precio"]
 
-        precio_a = precios_ayer.get(prod_id, precio_h)
-        precio_d1 = precios_dia1.get(prod_id, precio_h)
-
-        var_dia = calcular_variacion(precio_h, precio_a)
-        var_acum = calcular_variacion(precio_h, precio_d1)
+        precio_a = precios_ayer.get(prod_id)
+        precio_d1 = precios_dia1.get(prod_id)
 
         if cat not in categorias_stats:
             categorias_stats[cat] = {
-                'acum_hoy_ayer': 0.0, 'acum_ayer': 0.0,
-                'acum_hoy_dia1': 0.0, 'acum_dia1': 0.0,
-                'productos_variacion_dia': []
+                "acum_hoy_ayer": 0.0, "acum_ayer": 0.0,
+                "acum_hoy_dia1": 0.0, "acum_dia1": 0.0,
+                "productos_variacion_dia": []
             }
 
-        # Add to category totals if present in history
-        if prod_id in precios_ayer:
-            categorias_stats[cat]['acum_hoy_ayer'] += precio_h
-            categorias_stats[cat]['acum_ayer'] += precio_a
+        # Variación Día a Día (solo productos que ya existían previamente)
+        if precio_a is not None and precio_a > 0:
+            var_dia = calcular_variacion(precio_h, precio_a)
+            categorias_stats[cat]["acum_hoy_ayer"] += precio_h
+            categorias_stats[cat]["acum_ayer"] += precio_a
             acum_hoy_ayer += precio_h
             acum_ayer += precio_a
 
             if var_dia != 0:
-                categorias_stats[cat]['productos_variacion_dia'].append({
-                    'nombre': nombre,
-                    'precio': precio_h,
-                    'var_dia': var_dia
+                categorias_stats[cat]["productos_variacion_dia"].append({
+                    "nombre": nombre,
+                    "precio": precio_h,
+                    "var_dia": var_dia
                 })
 
-        if prod_id in precios_dia1:
-            categorias_stats[cat]['acum_hoy_dia1'] += precio_h
-            categorias_stats[cat]['acum_dia1'] += precio_d1
+        # Variación Acumulada
+        if precio_d1 is not None and precio_d1 > 0:
+            categorias_stats[cat]["acum_hoy_dia1"] += precio_h
+            categorias_stats[cat]["acum_dia1"] += precio_d1
             acum_hoy_dia1 += precio_h
             acum_dia1 += precio_d1
 
-    # Formatear el reporte
-    lineas = [f"📊 *Reporte Carrefour - {fecha_actual}*\n"]
+    # Formatear el reporte en HTML
+    lineas = [f"📊 <b>Reporte Carrefour - {fecha_actual}</b>\n"]
 
     # Canasta General
     var_dia_general = calcular_variacion(acum_hoy_ayer, acum_ayer)
     var_acum_general = calcular_variacion(acum_hoy_dia1, acum_dia1)
 
     estado_dia = "📈" if var_dia_general > 0 else "📉" if var_dia_general < 0 else "➖"
-    lineas.append(f"🛒 *CANASTA GENERAL*")
+    lineas.append("🛒 <b>CANASTA GENERAL</b>")
     lineas.append(f"• Día: {var_dia_general:+.2f}% {estado_dia}")
     lineas.append(f"• Acumulado: {var_acum_general:+.2f}%\n")
 
     # Por categoría
     hubo_variaciones = False
-    for cat, stats in categorias_stats.items():
-        var_cat_dia = calcular_variacion(stats['acum_hoy_ayer'], stats['acum_ayer'])
-        var_cat_acum = calcular_variacion(stats['acum_hoy_dia1'], stats['acum_dia1'])
-        variaciones = stats['productos_variacion_dia']
+    for cat, stats in sorted(categorias_stats.items()):
+        var_cat_dia = calcular_variacion(stats["acum_hoy_ayer"], stats["acum_ayer"])
+        var_cat_acum = calcular_variacion(stats["acum_hoy_dia1"], stats["acum_dia1"])
+        variaciones = stats["productos_variacion_dia"]
 
         if var_cat_dia != 0 or variaciones:
             hubo_variaciones = True
-
             estado_cat = "🔴" if var_cat_dia > 0 else "🟢" if var_cat_dia < 0 else "⚪"
-            lineas.append(f"🏷️ *{cat}*")
+            lineas.append(f"🏷️ <b>{html.escape(cat)}</b>")
             lineas.append(f"• Variación Día: {var_cat_dia:+.2f}% {estado_cat}")
             lineas.append(f"• Variación Acum.: {var_cat_acum:+.2f}%")
 
-            # Top 3 subidas y bajadas
             if variaciones:
-                variaciones.sort(key=lambda x: x['var_dia'], reverse=True)
-
-                subidas = [v for v in variaciones if v['var_dia'] > 0][:3]
-                bajadas = [v for v in variaciones if v['var_dia'] < 0]
-                # Get bottom 3 elements if they exist (largest negatives)
-                bajadas = sorted(bajadas, key=lambda x: x['var_dia'])[:3]
+                variaciones.sort(key=lambda x: x["var_dia"], reverse=True)
+                subidas = [v for v in variaciones if v["var_dia"] > 0][:3]
+                bajadas = sorted([v for v in variaciones if v["var_dia"] < 0], key=lambda x: x["var_dia"])[:3]
 
                 if subidas:
-                    lineas.append("  🔺 *Top Subidas:*")
+                    lineas.append("  🔺 <b>Top Subidas:</b>")
                     for v in subidas:
-                        nombre_safe = v['nombre'].replace('*', '').replace('_', '').replace('[', '').replace(']', '')
-                        lineas.append(f"    - {nombre_safe}: +{v['var_dia']}% (${v['precio']})")
+                        nombre_safe = html.escape(v["nombre"])
+                        lineas.append(f"    - {nombre_safe}: +{v['var_dia']:.2f}% (${v['precio']:,.2f})")
 
                 if bajadas:
-                    lineas.append("  🔻 *Top Bajadas:*")
+                    lineas.append("  🔻 <b>Top Bajadas:</b>")
                     for v in bajadas:
-                        nombre_safe = v['nombre'].replace('*', '').replace('_', '').replace('[', '').replace(']', '')
-                        lineas.append(f"    - {nombre_safe}: {v['var_dia']}% (${v['precio']})")
+                        nombre_safe = html.escape(v["nombre"])
+                        lineas.append(f"    - {nombre_safe}: {v['var_dia']:.2f}% (${v['precio']:,.2f})")
 
-            lineas.append("") # Línea en blanco
+            lineas.append("")
 
     if not hubo_variaciones:
         lineas.append("No hubo variaciones de precio en las categorías hoy.")
 
     informe = "\n".join(lineas)
-    enviar_telegram(informe)
+
+    if send_telegram_flag:
+        enviar_telegram(informe, parse_mode="HTML")
+    else:
+        print("\n--- REPORTE GENERADO (MODO SIN TELEGRAM) ---")
+        print(informe)
+
+def parse_args():
+    """Configuración de argumentos CLI para depuración y pruebas."""
+    parser = argparse.ArgumentParser(description="Carrefour Price Monitor Bot")
+    parser.add_argument("--dry-run", action="store_true", help="Escanea sin guardar en BD ni enviar Telegram")
+    parser.add_argument("--no-telegram", action="store_true", help="No envía el reporte a Telegram")
+    parser.add_argument("--categories", type=str, help="IDs de categorías separadas por coma (ej. 161,336)")
+    parser.add_argument("--workers", type=int, default=4, help="Cantidad de hilos paralelos")
+    parser.add_argument("--limit", type=int, default=None, help="Límite de productos por tarea (útil para pruebas)")
+    parser.add_argument("--no-subcategories", action="store_true", help="Usa categorías principales sin desglosar en subcategorías")
+    return parser.parse_args()
 
 def main():
-    print("Iniciando bot de Carrefour (v2 - API)...")
+    args = parse_args()
+    logging.info("Iniciando bot de Carrefour (v3 - Robusto & Escalable)...")
+
+    if args.dry_run:
+        logging.info("MODO DRY-RUN ACTIVO: No se afectará la base de datos ni Telegram.")
+
+    # Selección de categorías
+    target_cats = TARGET_CATEGORIES
+    if args.categories:
+        try:
+            cat_ids = [int(x.strip()) for x in args.categories.split(",")]
+            target_cats = {cid: TARGET_CATEGORIES.get(cid, f"Categoría {cid}") for cid in cat_ids}
+            logging.info(f"Categorías seleccionadas: {target_cats}")
+        except ValueError:
+            logging.error("Formato inválido para --categories. Ingrese IDs numéricos (ej. 161,336).")
+            sys.exit(1)
+
     try:
-        conn, cursor, all_products_today = process_and_save_data()
-        if all_products_today:
-            generate_and_send_report(conn, cursor, all_products_today)
-            cursor.close()
+        # Descubrir tareas de scraping
+        tasks = discover_category_tasks(target_cats, use_subcategories=not args.no_subcategories)
+
+        # Extracción de productos en paralelo
+        all_products = fetch_all_products(tasks, max_workers=args.workers, limit=args.limit)
+        logging.info(f"Total de productos únicos obtenidos: {len(all_products)}")
+
+        if not all_products:
+            logging.warning("No se obtuvieron productos. Finalizando ejecución.")
+            return
+
+        if args.dry_run:
+            logging.info(f"Dry-run finalizado con éxito ({len(all_products)} productos extraídos).")
+            sample = all_products[:5]
+            for s in sample:
+                logging.info(f"  Muestra: [{s['categoria']}] {s['nombre']} - ${s['precio']:,.2f}")
+            return
+
+        if not DATABASE_URL:
+            raise ValueError("DATABASE_URL no configurada en variables de entorno.")
+
+        # Persistencia en base de datos y reporte con gestión segura de conexiones
+        logging.info("Conectando a PostgreSQL...")
+        conn = psycopg2.connect(DATABASE_URL)
+        try:
+            with conn:
+                with conn.cursor() as cursor:
+                    init_db(cursor)
+                    save_products_and_prices(conn, cursor, all_products)
+                    logging.info("Productos e historial de precios guardados exitosamente.")
+
+            with conn.cursor() as cursor:
+                logging.info("Generando reporte diario...")
+                send_tg = not args.no_telegram
+                generate_and_send_report(conn, cursor, all_products, send_telegram_flag=send_tg)
+        finally:
             conn.close()
+            logging.info("Conexión a PostgreSQL cerrada limpiamente.")
+
+        logging.info("Proceso completado exitosamente.")
+
     except Exception as e:
-        print(f"Error fatal: {e}")
+        logging.exception(f"Falla crítica en la ejecución: {e}")
+        if not args.dry_run and not args.no_telegram:
+            notificar_error_telegram(e)
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
