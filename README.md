@@ -1,15 +1,16 @@
 # Carrefour Price Monitor
 
-Bot para monitorear precios en Carrefour Argentina de miles de productos de supermercado. Corre diariamente con GitHub Actions, guarda los precios en una base de datos PostgreSQL (Neon) y envía un reporte resumido por Telegram agrupado por categorías.
+Bot para monitorear precios en Carrefour Argentina de miles de productos de supermercado. Corre automáticamente una vez al día con GitHub Actions, almacena los precios en PostgreSQL (Neon) y envía un reporte ejecutivo por Telegram con la variación diaria y la inflación acumulada del mes.
 
 ## Qué hace
 
-- **Catálogo completo sin truncar**: Desglosa las categorías mediante el árbol de subcategorías de VTEX (`fq=C:/padre/hijo/`), evitando el límite de 2.500 productos por endpoint y capturando más de 12.000 productos.
-- **Scraping concurrente y resiliente**: Emplea `ThreadPoolExecutor` con sesiones HTTP aisladas por hilo y reintentos exponenciales automáticos ante errores 429 y 5xx.
-- **Base de datos optimizada**: Almacenamiento por lotes en PostgreSQL con transacciones seguras e índices para análisis de series temporales.
-- **Análisis de variaciones de precios**: Compara los precios del día contra el registro anterior más reciente y contra la línea base histórica (Día 1).
-- **Reporte seguro en Telegram**: Genera un informe en HTML con chunking inteligente para evitar pérdidas de mensajes o fallos de parseo.
-- **Alertas de fallos**: Notifica automáticamente al canal de Telegram si ocurre una excepción fatal durante la ejecución.
+- **Catálogo completo sin truncar**: Desglosa las categorías mediante el árbol de subcategorías de VTEX (`fq=C:/padre/hijo/`), capturando la totalidad del catálogo (más de 25.000 productos) sin toparse con el límite de 2.500 de la API.
+- **Filtro de stock real**: Solo monitorea productos con stock disponible (`AvailableQuantity > 0`), ignorando artículos agotados o con precios desactualizados.
+- **Scraping concurrente y resiliente**: Emplea `ThreadPoolExecutor` con sesiones HTTP aisladas por hilo y reintentos automáticos (`urllib3.util.retry.Retry`) ante códigos 429 y 5xx.
+- **Base de datos optimizada**: Inserción por lotes en PostgreSQL con transacciones atómicas e índices en fechas para consultas instantáneas.
+- **Reporte ejecutivo limpio**: Mensaje compacto en Telegram que muestra la Canasta General (Día y Mes) y el desglose de categorías en una sola línea cada una, sin spam de productos de marketplace.
+- **Prevención de ejecuciones duplicadas**: Si el bot ya corrió en el día, omite automáticamente cualquier intento redundante para no enviar reportes duplicados.
+- **Alertas de fallos**: Si ocurre una excepción fatal durante la ejecución, envía inmediatamente una notificación de alerta a Telegram.
 
 ## Stack
 
@@ -17,11 +18,33 @@ Bot para monitorear precios en Carrefour Argentina de miles de productos de supe
 - **Requests + Urllib3** (API VTEX con reintentos nativos)
 - **PostgreSQL / Neon** (`psycopg2-binary`)
 - **Telegram Bot API**
-- **GitHub Actions** (ejecución programada y bajo demanda)
+- **GitHub Actions** (ejecución diaria a las 08:35 AM ART / 11:35 UTC)
+
+## Formato del Reporte en Telegram
+
+```text
+📊 Reporte Carrefour - 2026-09-07
+
+🛒 CANASTA GENERAL
+• Día: -0.10% 📉
+• Acumulado Mes (Septiembre): -0.46% 📉
+
+📋 Variación por Categoría:
+🏷️ Almacén: +0.03% 🔴 (Mes: +0.14%)
+🏷️ Desayuno y merienda: +0.00% ⚪ (Mes: +0.08%)
+🏷️ Bebidas: +0.00% ⚪ (Mes: -0.01%)
+🏷️ Lácteos y productos frescos: -0.22% 🟢 (Mes: -0.46%)
+🏷️ Carnes y pescados: +0.07% 🔴 (Mes: -0.71%)
+🏷️ Frutas y verduras: +0.10% 🔴 (Mes: +0.60%)
+🏷️ Panadería: +0.00% ⚪ (Mes: +0.09%)
+🏷️ Congelados: +0.00% ⚪ (Mes: +0.02%)
+🏷️ Limpieza: -0.02% 🟢 (Mes: -5.67%)
+🏷️ Perfumería y farmacia: -0.52% 🟢 (Mes: +0.02%)
+🏷️ Mundo Bebé: +0.00% ⚪ (Mes: -0.09%)
+🏷️ Mascotas: +0.03% 🔴 (Mes: -1.13%)
+```
 
 ## Uso Local y Argumentos CLI
-
-El bot incluye parámetros de línea de comandos para facilitar depuración y pruebas locales:
 
 ```bash
 # Modo prueba (no guarda en base de datos ni envía a Telegram)
@@ -33,7 +56,10 @@ python carrefour_bot.py --dry-run --categories 336 --limit 10
 # Ejecutar y guardar en BD pero sin enviar reporte a Telegram
 python carrefour_bot.py --no-telegram
 
-# Configurar hilos de scraping paralelos (por defecto: 4)
+# Forzar ejecución aunque ya se haya ejecutado en la fecha de hoy
+python carrefour_bot.py --force
+
+# Configurar cantidad de hilos paralelos (por defecto: 4)
 python carrefour_bot.py --workers 6
 ```
 

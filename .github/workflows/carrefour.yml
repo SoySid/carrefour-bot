@@ -3,8 +3,8 @@ name: Scrape Carrefour Daily
 on:
   workflow_dispatch: # Permite dispararlo manualmente o vía API
   schedule:
-    # Ejecutar todos los días a las 12:00 UTC (09:00 AM Hora Argentina ART / UTC-3)
-    - cron: "0 12 * * *"
+    # Ejecutar una vez al día a las 11:35 UTC (08:35 AM Hora Argentina ART / UTC-3)
+    - cron: "35 11 * * *"
 
 jobs:
   scrape:

@@ -500,36 +500,13 @@ def generate_and_send_report(conn, cursor, all_products_today, send_telegram_fla
         key=lambda x: cat_order.index(x[0]) if x[0] in cat_order else 99
     )
 
-    hubo_variaciones = False
+    lineas.append("📋 <b>Variación por Categoría:</b>")
     for cat, stats in sorted_cats:
         var_cat_dia = calcular_variacion(stats["acum_hoy_ayer"], stats["acum_ayer"])
         var_cat_mes = calcular_variacion(stats["acum_hoy_mes"], stats["acum_mes"])
-        variaciones = stats["productos_variacion_dia"]
 
-        if var_cat_dia != 0 or var_cat_mes != 0 or variaciones:
-            hubo_variaciones = True
-            estado_cat = "🔴" if var_cat_dia > 0 else "🟢" if var_cat_dia < 0 else "⚪"
-            lineas.append(f"🏷️ <b>{html.escape(cat)}: {var_cat_dia:+.2f}% {estado_cat}</b> (Mes: {var_cat_mes:+.2f}%)")
-
-            if variaciones:
-                variaciones.sort(key=lambda x: x["var_dia"], reverse=True)
-                subidas = [v for v in variaciones if v["var_dia"] > 0][:1]
-                bajadas = sorted([v for v in variaciones if v["var_dia"] < 0], key=lambda x: x["var_dia"])[:1]
-
-                if subidas:
-                    s = subidas[0]
-                    nombre_safe = html.escape(s["nombre"])
-                    lineas.append(f"  🔺 {nombre_safe}: +{s['var_dia']:.2f}% (${s['precio']:,.2f})")
-
-                if bajadas:
-                    b = bajadas[0]
-                    nombre_safe = html.escape(b["nombre"])
-                    lineas.append(f"  🔻 {nombre_safe}: {b['var_dia']:.2f}% (${b['precio']:,.2f})")
-
-            lineas.append("")
-
-    if not hubo_variaciones:
-        lineas.append("No hubo variaciones de precio en las categorías hoy.")
+        estado_cat = "🔴" if var_cat_dia > 0 else "🟢" if var_cat_dia < 0 else "⚪"
+        lineas.append(f"🏷️ <b>{html.escape(cat)}</b>: {var_cat_dia:+.2f}% {estado_cat} (Mes: {var_cat_mes:+.2f}%)")
 
     informe = "\n".join(lineas)
 
@@ -538,6 +515,21 @@ def generate_and_send_report(conn, cursor, all_products_today, send_telegram_fla
     else:
         print("\n--- REPORTE GENERADO (MODO SIN TELEGRAM) ---")
         print(informe)
+
+def check_already_executed_today():
+    """Verifica si ya se guardaron precios en la base de datos con la fecha de hoy."""
+    if not DATABASE_URL:
+        return False
+    try:
+        conn = psycopg2.connect(DATABASE_URL)
+        with conn.cursor() as cur:
+            cur.execute("SELECT 1 FROM historial_precios WHERE fecha = CURRENT_DATE LIMIT 1;")
+            exists = cur.fetchone() is not None
+        conn.close()
+        return exists
+    except Exception as e:
+        logging.warning(f"No se pudo verificar ejecución previa: {e}")
+        return False
 
 def parse_args():
     """Configuración de argumentos CLI para depuración y pruebas."""
@@ -548,6 +540,7 @@ def parse_args():
     parser.add_argument("--workers", type=int, default=4, help="Cantidad de hilos paralelos")
     parser.add_argument("--limit", type=int, default=None, help="Límite de productos por tarea (útil para pruebas)")
     parser.add_argument("--no-subcategories", action="store_true", help="Usa categorías principales sin desglosar en subcategorías")
+    parser.add_argument("--force", action="store_true", help="Fuerza la ejecución aunque ya se haya ejecutado hoy")
     return parser.parse_args()
 
 def main():
@@ -556,6 +549,9 @@ def main():
 
     if args.dry_run:
         logging.info("MODO DRY-RUN ACTIVO: No se afectará la base de datos ni Telegram.")
+    elif not args.force and check_already_executed_today():
+        logging.info("El bot ya se ejecutó el día de hoy (%s). Finalizando para evitar duplicados (use --force para forzar).", date.today())
+        return
 
     # Selección de categorías
     target_cats = TARGET_CATEGORIES
