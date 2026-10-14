@@ -18,20 +18,18 @@ export function Header({ fechaHoy }: HeaderProps) {
     <header className="sticky top-0 z-40 w-full border-b border-surface-border bg-surface-50/90 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
         <div className="flex items-center gap-6">
-          <a href="#" className="flex items-center gap-2.5 group">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-500/15 text-brand-400 ring-1 ring-brand-500/30 transition-colors group-hover:bg-brand-500/25">
-              <Activity className="h-4 w-4" />
+          <a href="#" className="flex items-center gap-3 group">
+            <div className="h-9 w-9 overflow-hidden rounded-xl border border-blue-500/30 bg-white shadow-md p-0.5 transition-all group-hover:border-blue-400 group-hover:shadow-[0_0_15px_rgba(0,102,204,0.3)]">
+              <img
+                src="/logo.jpg"
+                alt="Carrefour Tracker Logo"
+                className="h-full w-full object-contain rounded-[10px]"
+              />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-base font-bold tracking-tight text-slate-100 group-hover:text-white transition-colors">
-                  Carrefour Tracker
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400 ring-1 ring-inset ring-emerald-500/20">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Corte diario
-                </span>
-              </div>
+            <div className="flex items-center gap-2">
+              <span className="text-base font-extrabold tracking-tight text-slate-100 group-hover:text-white transition-colors">
+                Carrefour Tracker
+              </span>
             </div>
           </a>
 

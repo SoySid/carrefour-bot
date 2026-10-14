@@ -8,20 +8,25 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["'Plus Jakarta Sans'", "system-ui", "-apple-system", "sans-serif"],
+        mono: ["'JetBrains Mono'", "monospace"],
+      },
       colors: {
         brand: {
-          50: "#eef6ff",
-          100: "#d9eaff",
+          50: "#eff6ff",
+          100: "#dbeafe",
+          400: "#38bdf8",
           500: "#0066cc",
           600: "#004e98",
           700: "#003b73",
         },
         surface: {
-          50: "#0b0f19",
-          100: "#111827",
-          200: "#182234",
-          300: "#223048",
-          border: "#293952",
+          50: "#060913",
+          100: "#0d1322",
+          200: "#131c31",
+          300: "#1c2842",
+          border: "#1e293b",
         }
       },
     },
