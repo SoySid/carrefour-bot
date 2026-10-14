@@ -23,25 +23,24 @@ Bot para monitorear precios en Carrefour Argentina de miles de productos de supe
 ## Formato del Reporte en Telegram
 
 ```text
-📊 Reporte Carrefour - 2026-09-07
+📊 Reporte Carrefour - 2026-09-13
 
-🛒 CANASTA GENERAL
-• Día: -0.10% 📉
-• Acumulado Mes (Septiembre): -0.46% 📉
+🛒 CANASTA SUPERMERCADO
+• Día: +0.02% 📈 (🔺15 🔻4 ➖11,230)
+• Acumulado Mes (Septiembre): +1.65% 📈
 
 📋 Variación por Categoría:
-🏷️ Almacén: +0.03% 🔴 (Mes: +0.14%)
-🏷️ Desayuno y merienda: +0.00% ⚪ (Mes: +0.08%)
-🏷️ Bebidas: +0.00% ⚪ (Mes: -0.01%)
-🏷️ Lácteos y productos frescos: -0.22% 🟢 (Mes: -0.46%)
-🏷️ Carnes y pescados: +0.07% 🔴 (Mes: -0.71%)
-🏷️ Frutas y verduras: +0.10% 🔴 (Mes: +0.60%)
-🏷️ Panadería: +0.00% ⚪ (Mes: +0.09%)
-🏷️ Congelados: +0.00% ⚪ (Mes: +0.02%)
-🏷️ Limpieza: -0.02% 🟢 (Mes: -5.67%)
-🏷️ Perfumería y farmacia: -0.52% 🟢 (Mes: +0.02%)
-🏷️ Mundo Bebé: +0.00% ⚪ (Mes: -0.09%)
-🏷️ Mascotas: +0.03% 🔴 (Mes: -1.13%)
+🏷️ Almacén: +0.00% ⚪ (Mes: +1.19%)
+🏷️ Desayuno y merienda: +0.00% ⚪ (Mes: +2.68%)
+🏷️ Bebidas: +0.00% ⚪ (Mes: +0.45%)
+🏷️ Lácteos y productos frescos: +0.00% ⚪ (Mes: +0.36%)
+🏷️ Carnes y pescados: +0.00% ⚪ (Mes: +0.27%)
+🏷️ Frutas y verduras: +0.05% 🔴 (Mes: +1.61%)
+🏷️ Panadería: +0.00% ⚪ (Mes: +0.12%)
+🏷️ Congelados: +0.00% ⚪ (Mes: +5.36%)
+🏷️ Limpieza: +0.00% ⚪ (Mes: +0.76%)
+🏷️ Perfumería y farmacia: +0.00% ⚪ (Mes: +1.14%)
+🏷️ Mascotas: +0.00% ⚪ (Mes: +1.62%)
 ```
 
 ## Uso Local y Argumentos CLI

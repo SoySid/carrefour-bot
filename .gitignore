@@ -17,3 +17,8 @@ __pycache__/
 
 # Archivos personales de apuntes
 lista.txt
+
+# Aplicación Web (Next.js)
+web/node_modules/
+web/.next/
+web/.env*.local
