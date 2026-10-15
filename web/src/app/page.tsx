@@ -50,14 +50,14 @@ export default async function HomePage() {
         <Methodology />
       </main>
 
-      <footer className="mt-16 border-t border-surface-border bg-surface-100 py-8 text-center text-xs text-slate-500">
+      <footer className="mt-16 border-t border-surface-border bg-surface-100 py-8 text-center text-xs text-zinc-500">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© {new Date().getFullYear()} Carrefour Monitor. Datos públicos obtenidos con fines informativos y analíticos.</p>
-          <div className="flex items-center gap-4 text-slate-400">
-            <a href="https://github.com/sidarg/carrefour-bot" target="_blank" rel="noopener noreferrer" className="hover:text-slate-200">
+          <p>© {new Date().getFullYear()} Carrefour Tracker. Datos públicos obtenidos con fines informativos y analíticos.</p>
+          <div className="flex items-center gap-4 text-zinc-400">
+            <a href="https://github.com/sidarg/carrefour-bot" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-200 transition-colors">
               GitHub
             </a>
-            <a href="https://t.me/carrefour_monitor_bot" target="_blank" rel="noopener noreferrer" className="hover:text-slate-200">
+            <a href="https://t.me/carrefour_monitor_bot" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-200 transition-colors">
               Canal Telegram
             </a>
           </div>

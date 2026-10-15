@@ -27,12 +27,12 @@ export function Methodology() {
 
   return (
     <section id="metodologia" className="space-y-4 pt-4 sm:pt-6">
-      <div>
-        <h2 className="text-xl font-bold tracking-tight text-slate-100 sm:text-2xl">
-          Metodología y Transparencia
+      <div className="border-b border-surface-border pb-3">
+        <h2 className="text-xl font-bold tracking-tight text-zinc-100 sm:text-2xl">
+          Metodología y Criterios Técnicos
         </h2>
-        <p className="text-xs text-slate-400 sm:text-sm">
-          Criterios técnicos empleados para garantizar la exactitud de los datos y evitar distorsiones.
+        <p className="text-xs text-zinc-400 sm:text-sm">
+          Criterios de extracción y cálculo aplicados en cada relevamiento diario.
         </p>
       </div>
 
@@ -42,15 +42,15 @@ export function Methodology() {
           return (
             <div
               key={idx}
-              className="rounded-xl border border-surface-border bg-surface-100 p-4 transition-all hover:border-slate-600"
+              className="rounded-xl border border-surface-border bg-surface-100 p-4 transition-colors hover:border-zinc-700/80"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-200 text-brand-500 mb-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-200 border border-white/5 text-blue-400 mb-3">
                 <Icon className="h-4 w-4" />
               </div>
-              <h3 className="text-sm font-semibold text-slate-200 mb-1">
+              <h3 className="text-sm font-semibold text-zinc-100 mb-1">
                 {p.title}
               </h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <p className="text-xs text-zinc-400 leading-relaxed">
                 {p.desc}
               </p>
             </div>

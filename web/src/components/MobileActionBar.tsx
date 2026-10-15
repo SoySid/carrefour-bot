@@ -16,15 +16,15 @@ export function MobileActionBar() {
       <div className="grid grid-cols-4 items-center justify-around px-2 py-2 text-center">
         <button
           onClick={() => scrollTo("canasta")}
-          className="flex flex-col items-center gap-1 py-1 text-slate-400 hover:text-slate-100 transition-colors"
+          className="flex flex-col items-center gap-1 py-1 text-zinc-400 hover:text-zinc-100 transition-colors"
         >
-          <Activity className="h-4 w-4 text-brand-500" />
+          <Activity className="h-4 w-4 text-blue-400" />
           <span className="text-[10px] font-medium">Canasta</span>
         </button>
 
         <button
           onClick={() => scrollTo("categorias")}
-          className="flex flex-col items-center gap-1 py-1 text-slate-400 hover:text-slate-100 transition-colors"
+          className="flex flex-col items-center gap-1 py-1 text-zinc-400 hover:text-zinc-100 transition-colors"
         >
           <Tag className="h-4 w-4" />
           <span className="text-[10px] font-medium">Rubros</span>
@@ -32,7 +32,7 @@ export function MobileActionBar() {
 
         <button
           onClick={() => scrollTo("buscador")}
-          className="flex flex-col items-center gap-1 py-1 text-slate-400 hover:text-slate-100 transition-colors"
+          className="flex flex-col items-center gap-1 py-1 text-zinc-400 hover:text-zinc-100 transition-colors"
         >
           <Search className="h-4 w-4" />
           <span className="text-[10px] font-medium">Buscador</span>
@@ -42,9 +42,9 @@ export function MobileActionBar() {
           href="https://t.me/carrefour_monitor_bot"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex flex-col items-center gap-1 py-1 text-slate-400 hover:text-slate-100 transition-colors"
+          className="flex flex-col items-center gap-1 py-1 text-zinc-400 hover:text-zinc-100 transition-colors"
         >
-          <Send className="h-4 w-4 text-brand-400" />
+          <Send className="h-4 w-4 text-blue-400" />
           <span className="text-[10px] font-medium">Telegram</span>
         </a>
       </div>

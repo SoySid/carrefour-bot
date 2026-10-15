@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --background: #060913;
-  --foreground: #f1f5f9;
+  --background: #0b0d11;
+  --foreground: #f1f3f7;
 }
 
 body {
@@ -17,26 +17,6 @@ body {
 
 .font-mono {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
-}
-
-/* Efecto de rayo láser para el escáner del Hero */
-@keyframes laserSweep {
-  0% {
-    top: 5%;
-    opacity: 0.8;
-  }
-  50% {
-    top: 90%;
-    opacity: 1;
-  }
-  100% {
-    top: 5%;
-    opacity: 0.8;
-  }
-}
-
-.animate-laser {
-  animation: laserSweep 3s ease-in-out infinite;
 }
 
 /* Scroll horizontal con snap para móvil */

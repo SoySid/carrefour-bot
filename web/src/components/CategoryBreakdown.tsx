@@ -126,65 +126,66 @@ export function CategoryBreakdown({ categorias }: CategoryBreakdownProps) {
   }, [categorias, sortKey]);
 
   return (
-    <section id="categorias" className="space-y-6 pt-6 sm:pt-10">
+    <section id="categorias" className="space-y-6 pt-4 sm:pt-6">
       {/* Cabecera de la sección con selector de orden */}
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 border-b border-surface-border/60 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 border-b border-surface-border pb-4">
         <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="inline-flex items-center gap-1 rounded-md bg-blue-500/10 px-2 py-0.5 text-[11px] font-bold text-blue-400 border border-blue-500/20">
-              <Layers className="h-3 w-3" /> Desglose Sectorial
+          <div className="flex items-center gap-2 mb-1">
+            <span className="inline-flex items-center gap-1 rounded bg-surface-100 px-2 py-0.5 text-[11px] font-mono text-zinc-400 border border-surface-border">
+              <Layers className="h-3 w-3 text-blue-400" />
+              <span>Desglose por rubro</span>
             </span>
-            <span className="text-xs text-slate-400 font-mono">
-              {categorias.length} rubros
+            <span className="text-xs text-zinc-500 font-mono">
+              {categorias.length} departamentos
             </span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-            Termómetro por Rubro
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-100">
+            Variación por Rubro
           </h2>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Impacto inflacionario desagregado por departamento de supermercado.
+          <p className="text-xs sm:text-sm text-zinc-400 mt-1">
+            Inflación acumulada en el mes y variación de las últimas 24 horas.
           </p>
         </div>
 
         {/* Selector de ordenamiento */}
-        <div className="flex items-center gap-1 rounded-xl bg-surface-100 p-1 border border-surface-border self-start sm:self-auto">
+        <div className="flex items-center gap-1 rounded-lg bg-surface-100 p-1 border border-surface-border self-start sm:self-auto">
           <button
             onClick={() => setSortKey("mes")}
-            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
               sortKey === "mes"
-                ? "bg-blue-600 text-white shadow-sm"
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-zinc-800 text-zinc-100 shadow-sm border border-white/10"
+                : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
-            <Flame className="h-3 w-3" />
+            <Flame className="h-3 w-3 text-amber-400" />
             <span>Mayor Mes</span>
           </button>
           <button
             onClick={() => setSortKey("dia")}
-            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
               sortKey === "dia"
-                ? "bg-blue-600 text-white shadow-sm"
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-zinc-800 text-zinc-100 shadow-sm border border-white/10"
+                : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
-            <Clock className="h-3 w-3" />
-            <span>Mayor Hoy</span>
+            <Clock className="h-3 w-3 text-blue-400" />
+            <span>Mayor 24h</span>
           </button>
           <button
             onClick={() => setSortKey("productos")}
-            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
               sortKey === "productos"
-                ? "bg-blue-600 text-white shadow-sm"
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-zinc-800 text-zinc-100 shadow-sm border border-white/10"
+                : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
-            <ArrowUpDown className="h-3 w-3" />
+            <ArrowUpDown className="h-3 w-3 text-zinc-400" />
             <span>Volumen</span>
           </button>
         </div>
       </div>
 
-      {/* Grid moderno responsive con micro-interacciones */}
+      {/* Grid moderno responsive */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {sortedCategories.map((cat) => {
           const varMes = Number(cat.varMes || 0);
@@ -212,53 +213,50 @@ export function CategoryBreakdown({ categorias }: CategoryBreakdownProps) {
           return (
             <div
               key={cat.categoria}
-              className={`relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-800/80 bg-gradient-to-b from-slate-900/60 via-surface-100 to-slate-950/80 p-5 shadow-md backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_25px_rgba(0,102,204,0.12)] group ${meta.borderHover}`}
+              className="flex flex-col justify-between rounded-xl border border-surface-border bg-surface-100 p-4 transition-colors hover:border-zinc-700/80"
             >
-              {/* Línea ambiental superior sutil */}
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent group-hover:via-blue-400/30 transition-colors" />
-
               <div>
                 {/* Cabecera de la tarjeta: Icono temático + Nombre + Badge */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div
-                      className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border p-2 transition-transform group-hover:scale-105 ${meta.color}`}
+                      className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border p-1.5 ${meta.color}`}
                     >
                       <Icon className="h-4 w-4" />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="text-sm font-bold text-slate-100 truncate group-hover:text-white transition-colors">
+                      <h3 className="text-sm font-semibold text-zinc-100 truncate">
                         {cat.categoria}
                       </h3>
-                      <span className="text-[10px] font-mono font-medium text-slate-400 uppercase tracking-wider">
+                      <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">
                         {meta.badge}
                       </span>
                     </div>
                   </div>
 
-                  <span className="flex-shrink-0 rounded-md bg-surface-200/90 px-2 py-0.5 text-[11px] font-mono text-slate-400 border border-white/5">
-                    {(cat.totalProductos || 0).toLocaleString("es-AR")} arts
+                  <span className="flex-shrink-0 rounded bg-surface-200 px-1.5 py-0.5 text-[11px] font-mono text-zinc-400 border border-white/5">
+                    {(cat.totalProductos || 0).toLocaleString("es-AR")}
                   </span>
                 </div>
 
                 {/* Métricas: Inflación Acumulada del Mes (Principal) */}
-                <div className="mt-4 rounded-xl bg-surface-200/50 p-3 border border-white/5">
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono mb-1">
-                    <span className="uppercase tracking-wider font-semibold">Inflación Mes</span>
-                    <span className="text-slate-400">Variación 24h</span>
+                <div className="mt-4 rounded-lg bg-surface-200/60 p-3 border border-white/5">
+                  <div className="flex items-center justify-between text-[11px] text-zinc-400 font-mono mb-1">
+                    <span>Mes en curso</span>
+                    <span>24h</span>
                   </div>
 
                   <div className="flex items-baseline justify-between gap-2">
                     <div className="flex items-center gap-1.5">
                       <span
-                        className={`text-2xl font-black font-mono tracking-tight ${
+                        className={`text-2xl font-bold font-mono tracking-tight ${
                           isMonthHigh
                             ? "text-rose-400"
                             : isMonthUp
-                            ? "text-rose-300"
+                            ? "text-rose-400"
                             : isMonthDown
                             ? "text-emerald-400"
-                            : "text-slate-200"
+                            : "text-zinc-200"
                         }`}
                       >
                         {varMes > 0 ? `+${varMes.toFixed(2)}%` : `${varMes.toFixed(2)}%`}
@@ -268,7 +266,7 @@ export function CategoryBreakdown({ categorias }: CategoryBreakdownProps) {
                       ) : isMonthDown ? (
                         <TrendingDown className="h-3.5 w-3.5 text-emerald-400" />
                       ) : (
-                        <Minus className="h-3.5 w-3.5 text-slate-500" />
+                        <Minus className="h-3.5 w-3.5 text-zinc-500" />
                       )}
                     </div>
 
@@ -279,7 +277,7 @@ export function CategoryBreakdown({ categorias }: CategoryBreakdownProps) {
                             ? "text-rose-400"
                             : isDayDown
                             ? "text-emerald-400"
-                            : "text-slate-400"
+                            : "text-zinc-400"
                         }`}
                       >
                         {varDia > 0 ? `+${varDia.toFixed(2)}%` : `${varDia.toFixed(2)}%`}
@@ -290,17 +288,17 @@ export function CategoryBreakdown({ categorias }: CategoryBreakdownProps) {
               </div>
 
               {/* Pie de tarjeta: Barra de distribución y micro-conteo */}
-              <div className="mt-4 pt-3 border-t border-surface-border/40">
-                <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
-                  <div style={{ width: `${barUp}%` }} className="bg-rose-500 transition-all" title={`${cat.subieron} subieron`} />
-                  <div style={{ width: `${barDown}%` }} className="bg-emerald-500 transition-all" title={`${cat.bajaron} bajaron`} />
-                  <div style={{ width: `${barSame}%` }} className="bg-slate-700 transition-all" title={`${cat.iguales} estables`} />
+              <div className="mt-4 pt-3 border-t border-surface-border">
+                <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-surface-200">
+                  <div style={{ width: `${barUp}%` }} className="bg-rose-500" title={`${cat.subieron} subieron`} />
+                  <div style={{ width: `${barDown}%` }} className="bg-emerald-500" title={`${cat.bajaron} bajaron`} />
+                  <div style={{ width: `${barSame}%` }} className="bg-zinc-700" title={`${cat.iguales} estables`} />
                 </div>
 
-                <div className="mt-2 flex items-center justify-between text-[11px] font-mono text-slate-400">
-                  <span className="text-rose-400/90 font-semibold">▲ {cat.subieron}</span>
-                  <span className="text-emerald-400/90 font-semibold">▼ {cat.bajaron}</span>
-                  <span className="text-slate-400 font-medium">— {cat.iguales}</span>
+                <div className="mt-2 flex items-center justify-between text-[11px] font-mono text-zinc-400">
+                  <span className="text-rose-400 font-semibold">{cat.subieron} subieron</span>
+                  <span className="text-emerald-400 font-semibold">{cat.bajaron} bajaron</span>
+                  <span className="text-zinc-500">{cat.iguales}</span>
                 </div>
               </div>
             </div>
