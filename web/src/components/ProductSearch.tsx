@@ -52,6 +52,20 @@ export function ProductSearch() {
     }
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSelectedProduct(null);
+    };
+    if (selectedProduct) {
+      window.addEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "hidden";
+    }
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [selectedProduct]);
+
   const formatPrecio = (valor: number) => {
     return new Intl.NumberFormat("es-AR", {
       style: "currency",
@@ -64,10 +78,10 @@ export function ProductSearch() {
     <section id="buscador" className="space-y-6 pt-6 sm:pt-8 animate-enter delay-75">
       <div className="flex flex-col gap-1.5 max-w-3xl">
         <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-          Buscador de Productos
+          Buscador de productos
         </h2>
         <p className="text-base text-slate-300">
-          Consultá precios vigentes y evolución histórica por artículo individual en tiempo real.
+          Consultá precios actuales y el historial de variaciones por artículo.
         </p>
       </div>
 
@@ -79,7 +93,7 @@ export function ProductSearch() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar por producto, marca o rubro (ej. leche, café, fideos)..."
-            className="w-full rounded-2xl bg-surface-100 py-4 pl-12 pr-12 text-base text-white placeholder-slate-400 focus:bg-surface-200 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors duration-200"
+            className="w-full rounded-2xl bg-surface-100 border border-surface-200 py-4 pl-12 pr-12 text-base text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors duration-200"
           />
           {query ? (
             <button
@@ -99,19 +113,19 @@ export function ProductSearch() {
 
         {/* Resultados de búsqueda */}
         {results.length > 0 && (
-          <div className="mt-2.5 rounded-2xl bg-surface-100 p-2 max-h-80 overflow-y-auto space-y-1 z-30 relative animate-fade-in">
+          <div data-ui="true" className="mt-2.5 rounded-2xl bg-surface-100 border border-surface-200 p-2 max-h-80 overflow-y-auto space-y-1 z-30 relative animate-fade-in">
             {results.map((prod) => (
               <div
                 key={prod.id}
                 onClick={() => handleSelectProduct(prod)}
-                className="flex items-center justify-between p-3.5 rounded-xl transition-colors duration-150 hover:bg-surface-200 cursor-pointer"
+                className="flex items-center justify-between p-3.5 rounded-xl transition-colors duration-150 hover:bg-surface-200/70 cursor-pointer"
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1 pr-4">
                   {prod.imagenUrl && (
                     <img
                       src={prod.imagenUrl}
                       alt=""
-                      className="h-10 w-10 flex-shrink-0 rounded-lg bg-white object-contain p-1"
+                      className="h-10 w-10 flex-shrink-0 rounded-lg bg-surface-200/60 border border-surface-200 object-contain p-1"
                       loading="lazy"
                     />
                   )}
@@ -119,7 +133,7 @@ export function ProductSearch() {
                     <span className="block text-sm font-semibold text-white truncate">
                       {prod.nombre}
                     </span>
-                    <div className="flex items-center gap-2 text-sm text-slate-300 mt-1">
+                    <div className="flex items-center gap-2 text-sm text-slate-400 mt-1">
                       <span>{prod.categoria}</span>
                       <span>•</span>
                       <span className="text-slate-400 tabular-nums">Código: {prod.id}</span>
@@ -149,7 +163,7 @@ export function ProductSearch() {
                     )}
                   </div>
                   <div
-                    className="rounded-lg bg-surface-200 p-2 text-slate-300 transition-colors group-hover:text-white"
+                    className="rounded-lg bg-surface-200 p-2 text-slate-300 transition-colors group-hover:text-white group-hover:bg-surface-300"
                     title="Ver historial"
                   >
                     <LineChart className="h-4 w-4" />
@@ -161,112 +175,126 @@ export function ProductSearch() {
         )}
 
         {query.trim().length >= 2 && !loading && results.length === 0 && (
-          <div className="mt-2.5 rounded-2xl bg-surface-100 p-5 text-center text-sm text-slate-300">
-            No se encontraron productos coincidentes para "{query}".
+          <div className="mt-2.5 rounded-2xl bg-surface-100 border border-surface-200 p-5 text-center text-sm text-slate-300">
+            No encontramos productos para "{query}".
           </div>
         )}
       </div>
 
-      {/* Modal / Ficha de Historial de Precio */}
+      {/* Modal flotante de Detalle de Producto */}
       {selectedProduct && (
-        <div className="rounded-2xl bg-surface-100 p-6 sm:p-7 space-y-5 animate-fade-in-up" data-ui="true">
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-            <div className="flex items-start gap-4">
-              {selectedProduct.imagenUrl && (
-                <a
-                  href={selectedProduct.imagenUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  download
-                  title="Abrir o descargar imagen oficial"
-                  className="group flex-shrink-0"
-                >
-                  <img
-                    src={selectedProduct.imagenUrl}
-                    alt={selectedProduct.nombre}
-                    className="h-16 w-16 rounded-xl bg-white object-contain p-1.5 transition-transform group-hover:scale-105"
-                  />
-                </a>
-              )}
-              <div>
-                <div className="flex items-center gap-2.5">
-                  <span className="rounded-md bg-surface-200 px-2.5 py-1 text-sm font-medium text-slate-200">
-                    {selectedProduct.categoria}
-                  </span>
-                  <span className="text-sm text-slate-400 tabular-nums">
-                    Código: {selectedProduct.id}
-                  </span>
-                </div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mt-2">
-                  {selectedProduct.nombre}
-                </h3>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              {selectedProduct.imagenUrl && (
-                <a
-                  href={selectedProduct.imagenUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  download
-                  className="flex items-center gap-1.5 rounded-lg bg-surface-200 px-3.5 py-2 text-sm font-medium text-slate-200 transition-colors hover:text-white hover:bg-surface-300"
-                >
-                  <Download className="h-4 w-4" />
-                  <span>Descargar imagen</span>
-                </a>
-              )}
-              {selectedProduct.url && (
-                <a
-                  href={selectedProduct.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 rounded-lg bg-brand-500 px-3.5 py-2 text-sm font-semibold text-white transition-transform duration-150 hover:bg-brand-600 active:scale-95"
-                >
-                  <span>Ver en Carrefour</span>
-                  <ExternalLink className="h-4 w-4" />
-                </a>
-              )}
-              <button
-                onClick={() => setSelectedProduct(null)}
-                className="rounded-lg bg-surface-200 p-2 text-slate-400 hover:text-white transition-colors"
-                title="Cerrar detalle"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-
-          <div>
-            {loadingHistory ? (
-              <div className="flex items-center justify-center py-12 text-sm text-slate-300 gap-2.5">
-                <Loader2 className="h-5 w-5 animate-spin text-brand-400" />
-                <span>Cargando serie temporal...</span>
-              </div>
-            ) : history.length < 2 ? (
-              <div className="py-10 text-center text-sm text-slate-300">
-                Historial insuficiente para trazar la curva temporal (menos de 2 cortes registrados).
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-300 tabular-nums">
-                    {history.length} cortes registrados
-                  </span>
-                  <div className="flex items-center gap-4 text-sm tabular-nums">
-                    <span className="text-slate-300">
-                      Mínimo: <strong className="text-emerald-400 font-bold">{formatPrecio(Math.min(...history.map(h => h.precio)))}</strong>
+        <div
+          data-ui="true"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="product-modal-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/70 animate-fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedProduct(null);
+          }}
+        >
+          <div
+            data-ui="true"
+            className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-surface-100 p-6 sm:p-8 space-y-6 border border-surface-200 animate-enter relative"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+              <div className="flex items-start gap-4">
+                {selectedProduct.imagenUrl && (
+                  <a
+                    href={selectedProduct.imagenUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download
+                    title="Abrir o descargar imagen oficial"
+                    className="group flex-shrink-0"
+                  >
+                    <img
+                      src={selectedProduct.imagenUrl}
+                      alt={selectedProduct.nombre}
+                      className="h-16 w-16 rounded-xl bg-surface-200/60 border border-surface-200 object-contain p-1.5 transition-transform group-hover:scale-105"
+                    />
+                  </a>
+                )}
+                <div>
+                  <div className="flex items-center gap-2.5">
+                    <span className="rounded-md bg-surface-200 px-2.5 py-1 text-sm font-medium text-slate-300">
+                      {selectedProduct.categoria}
                     </span>
-                    <span className="text-slate-300">
-                      Máximo: <strong className="text-rose-400 font-bold">{formatPrecio(Math.max(...history.map(h => h.precio)))}</strong>
+                    <span className="text-sm text-slate-400 tabular-nums">
+                      Código: {selectedProduct.id}
                     </span>
                   </div>
-                </div>
-
-                <div className="h-48 w-full max-w-full overflow-hidden rounded-xl bg-surface-200 p-3">
-                  <PriceChart points={history} />
+                  <h3 id="product-modal-title" className="text-lg sm:text-xl font-bold text-white mt-2">
+                    {selectedProduct.nombre}
+                  </h3>
                 </div>
               </div>
-            )}
+              <div className="flex items-center gap-2 flex-wrap self-end sm:self-auto">
+                {selectedProduct.imagenUrl && (
+                  <a
+                    href={selectedProduct.imagenUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download
+                    className="flex items-center gap-1.5 rounded-lg bg-surface-200 px-3 py-2 text-sm font-medium text-slate-200 transition-colors hover:bg-surface-300"
+                  >
+                    <Download className="h-4 w-4 text-slate-300" />
+                    <span>Descargar imagen</span>
+                  </a>
+                )}
+                {selectedProduct.url && (
+                  <a
+                    href={selectedProduct.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-3.5 py-2 text-sm font-semibold text-white transition-transform duration-150 hover:bg-brand-500 active:scale-95"
+                  >
+                    <span>Ver en Carrefour</span>
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                )}
+                <button
+                  onClick={() => setSelectedProduct(null)}
+                  className="rounded-lg bg-surface-200 p-2 text-slate-300 hover:text-white hover:bg-surface-300 transition-colors"
+                  title="Cerrar ventana"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            <div>
+              {loadingHistory ? (
+                <div className="flex items-center justify-center py-12 text-sm text-slate-300 gap-2.5">
+                  <Loader2 className="h-5 w-5 animate-spin text-brand-400" />
+                  <span>Consultando historial de precios...</span>
+                </div>
+              ) : history.length < 2 ? (
+                <div className="py-10 text-center text-sm text-slate-300 bg-surface-200/40 rounded-xl border border-surface-200">
+                  Se necesitan al menos dos registros diarios para mostrar la curva de precios.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between text-sm flex-wrap gap-2">
+                    <span className="text-slate-400 tabular-nums font-medium">
+                      {history.length} cortes registrados
+                    </span>
+                    <div className="flex items-center gap-4 text-sm tabular-nums">
+                      <span className="text-slate-300">
+                        Mínimo: <strong className="text-emerald-400 font-bold">{formatPrecio(Math.min(...history.map(h => h.precio)))}</strong>
+                      </span>
+                      <span className="text-slate-300">
+                        Máximo: <strong className="text-rose-400 font-bold">{formatPrecio(Math.max(...history.map(h => h.precio)))}</strong>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="h-48 w-full max-w-full overflow-hidden rounded-xl bg-surface-200/30 border border-surface-200 p-3">
+                    <PriceChart points={history} />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -303,8 +331,8 @@ function PriceChart({ points }: { points: PricePoint[] }) {
     <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full block">
       <defs>
         <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#2563eb" stopOpacity="0.2" />
-          <stop offset="100%" stopColor="#2563eb" stopOpacity="0.0" />
+          <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.0" />
         </linearGradient>
       </defs>
 
@@ -314,7 +342,7 @@ function PriceChart({ points }: { points: PricePoint[] }) {
         y1={paddingY}
         x2={width - paddingX}
         y2={paddingY}
-        stroke="#243456"
+        stroke="#334155"
         strokeDasharray="4 4"
       />
       <line
@@ -322,7 +350,7 @@ function PriceChart({ points }: { points: PricePoint[] }) {
         y1={height - paddingY}
         x2={width - paddingX}
         y2={height - paddingY}
-        stroke="#243456"
+        stroke="#475569"
       />
 
       {/* Área y línea */}
@@ -331,7 +359,7 @@ function PriceChart({ points }: { points: PricePoint[] }) {
 
       {/* Puntos destacados */}
       <circle cx={coords[0].x} cy={coords[0].y} r="3.5" fill="#38bdf8" />
-      <circle cx={coords[coords.length - 1].x} cy={coords[coords.length - 1].y} r="4.5" fill="#2563eb" stroke="#ffffff" strokeWidth="1.5" />
+      <circle cx={coords[coords.length - 1].x} cy={coords[coords.length - 1].y} r="4.5" fill="#60a5fa" stroke="#0f172a" strokeWidth="1.5" />
 
       {/* Etiquetas de fechas */}
       <text x={paddingX} y={height - 8} fill="#94a3b8" fontSize="11" textAnchor="start" fontFamily="sans-serif">

@@ -38,7 +38,7 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="min-h-[100dvh] flex flex-col overflow-x-hidden">
+    <div className="min-h-[100dvh] flex flex-col overflow-x-hidden bg-surface-50 text-slate-100">
       <Header fechaHoy={data.stats.fechaHoy} />
 
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 sm:px-6 space-y-12 sm:space-y-16 overflow-hidden">
@@ -49,15 +49,15 @@ export default async function HomePage() {
         <Methodology />
       </main>
 
-      <footer className="mt-20 bg-surface-100 py-12 text-sm text-slate-400">
+      <footer data-ui="true" className="mt-20 bg-surface-100 py-12 text-sm text-slate-400">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 space-y-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p>© {new Date().getFullYear()} Carrefour Tracker. Datos públicos obtenidos con fines informativos y analíticos.</p>
-            <div className="flex items-center gap-6 text-slate-300">
-              <a href="https://github.com/sidarg/carrefour-bot" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+            <p>© {new Date().getFullYear()} Carrefour Tracker. Datos públicos relevados para seguimiento de precios.</p>
+            <div className="flex items-center gap-6 text-slate-400">
+              <a href="https://github.com/sidarg/carrefour-bot" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors font-medium">
                 GitHub
               </a>
-              <a href="https://t.me/carrefour_monitor_bot" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+              <a href="https://t.me/carrefour_monitor_bot" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors font-medium">
                 Canal Telegram
               </a>
             </div>

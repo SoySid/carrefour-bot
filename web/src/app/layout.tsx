@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Carrefour Monitor | Inflación y Precios de Supermercado en Vivo",
+  title: "Carrefour Monitor | Precios diarios y variaciones",
   description:
-    "Seguimiento diario de precios e inflación en tiempo real sobre el catálogo oficial de Carrefour Argentina.",
+    "Seguimiento diario de precios y variaciones sobre el catálogo oficial de Carrefour Argentina.",
 };
 
 export default function RootLayout({

@@ -22,13 +22,13 @@ export function Methodology() {
 
   return (
     <section id="metodologia" className="space-y-6 pt-6 sm:pt-8 animate-enter delay-150">
-      <div className="rounded-2xl bg-surface-100 p-6 sm:p-8 lg:p-10 space-y-8">
+      <div className="rounded-2xl bg-surface-100 border border-surface-200 p-6 sm:p-8 lg:p-10 space-y-8">
         <div className="max-w-3xl space-y-2">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-            Metodología y Criterios Técnicos
+            Metodología y criterios de relevamiento
           </h2>
           <p className="text-base text-slate-300 leading-relaxed max-w-prose">
-            Reglas de auditoría y extracción aplicadas en cada relevamiento diario para garantizar precisión estadística y transparencia.
+            Criterios técnicos aplicados en cada ejecución diaria para asegurar consistencia y trazabilidad en los datos.
           </p>
         </div>
 
@@ -36,14 +36,14 @@ export function Methodology() {
           {points.map((p, idx) => (
             <div
               key={idx}
-              className={`space-y-2 border-l-2 border-brand-500/50 pl-4 animate-enter ${
+              className={`space-y-2 border-l-2 border-brand-500 pl-4 animate-enter ${
                 idx === 0 ? "delay-150" : idx === 1 ? "delay-225" : idx === 2 ? "delay-300" : "delay-375"
               }`}
             >
-              <h3 className="text-lg font-bold text-white">
+              <h3 className="text-base font-bold text-white">
                 {p.title}
               </h3>
-              <p className="text-base text-slate-300 leading-relaxed max-w-prose">
+              <p className="text-sm text-slate-300 leading-relaxed max-w-prose">
                 {p.desc}
               </p>
             </div>

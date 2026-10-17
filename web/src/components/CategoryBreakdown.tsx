@@ -69,32 +69,32 @@ export function CategoryBreakdown({ categorias }: CategoryBreakdownProps) {
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-            Variación por Rubro
+            Variación por rubro
           </h2>
           <p className="text-base text-slate-300 mt-1">
-            Inflación mensual acumulada y variación en 24 horas sobre los {categorias.length} departamentos auditados.
+            Comparativa diaria y acumulada mensual en los {categorias.length} departamentos auditados.
           </p>
         </div>
 
         {/* Selector de ordenamiento */}
-        <div className="flex items-center gap-1.5 rounded-xl bg-surface-100 p-1.5 self-start sm:self-auto">
+        <div data-ui="true" className="flex items-center gap-1.5 rounded-xl bg-surface-100 p-1.5 self-start sm:self-auto border border-surface-200">
           <button
             onClick={() => setSortKey("mes")}
             className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors duration-150 ${
               sortKey === "mes"
-                ? "bg-brand-500 text-white"
-                : "text-slate-300 hover:text-white hover:bg-surface-200"
+                ? "bg-brand-600 text-white"
+                : "text-slate-400 hover:text-white hover:bg-surface-200"
             }`}
           >
-            <Flame className="h-4 w-4 text-amber-300" />
+            <Flame className="h-4 w-4 text-amber-400" />
             <span>Mayor en el mes</span>
           </button>
           <button
             onClick={() => setSortKey("dia")}
             className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors duration-150 ${
               sortKey === "dia"
-                ? "bg-brand-500 text-white"
-                : "text-slate-300 hover:text-white hover:bg-surface-200"
+                ? "bg-brand-600 text-white"
+                : "text-slate-400 hover:text-white hover:bg-surface-200"
             }`}
           >
             <Clock className="h-4 w-4" />
@@ -104,8 +104,8 @@ export function CategoryBreakdown({ categorias }: CategoryBreakdownProps) {
             onClick={() => setSortKey("productos")}
             className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors duration-150 ${
               sortKey === "productos"
-                ? "bg-brand-500 text-white"
-                : "text-slate-300 hover:text-white hover:bg-surface-200"
+                ? "bg-brand-600 text-white"
+                : "text-slate-400 hover:text-white hover:bg-surface-200"
             }`}
           >
             <ArrowUpDown className="h-4 w-4" />
@@ -115,11 +115,11 @@ export function CategoryBreakdown({ categorias }: CategoryBreakdownProps) {
       </div>
 
       {/* Tabla editorial de rubros */}
-      <div className="overflow-hidden rounded-2xl bg-surface-100 animate-enter delay-150">
-        <div data-ui="true" className="overflow-x-auto">
+      <div data-ui="true" className="overflow-hidden rounded-2xl bg-surface-100 border border-surface-200 animate-enter delay-150">
+        <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="text-sm font-semibold text-slate-400 bg-surface-200/50">
+              <tr className="text-sm font-semibold text-slate-300 bg-surface-200/50">
                 <th scope="col" className="py-4 pl-6 pr-4">Rubro / Departamento</th>
                 <th scope="col" className="py-4 px-4 text-right">Artículos</th>
                 <th scope="col" className="py-4 px-4 hidden lg:table-cell">Comportamiento en 24h</th>
@@ -150,11 +150,11 @@ export function CategoryBreakdown({ categorias }: CategoryBreakdownProps) {
                 return (
                   <tr
                     key={cat.categoria}
-                    className="transition-colors duration-150 odd:bg-surface-200/20 hover:bg-surface-200/60"
+                    className="transition-colors duration-150 odd:bg-surface-100 even:bg-surface-100/50 hover:bg-surface-200/60"
                   >
                     <td className="py-4 pl-6 pr-4">
                       <div>
-                        <span className="block font-bold text-white text-base">
+                        <span className="block font-semibold text-white text-base">
                           {cat.categoria}
                         </span>
                         <span className="text-sm font-medium text-brand-400">
@@ -167,14 +167,14 @@ export function CategoryBreakdown({ categorias }: CategoryBreakdownProps) {
                     </td>
                     <td className="py-4 px-4 hidden lg:table-cell">
                       <div className="w-56 space-y-1.5">
-                        <div className="flex h-2 w-full overflow-hidden rounded-full bg-surface-300">
+                        <div className="flex h-2 w-full overflow-hidden rounded-full bg-surface-200">
                           <div style={{ width: `${barUp}%` }} className="bg-rose-500 transition-[width] duration-300" title={`${cat.subieron} subieron`} />
                           <div style={{ width: `${barDown}%` }} className="bg-emerald-500 transition-[width] duration-300" title={`${cat.bajaron} bajaron`} />
                           <div style={{ width: `${barSame}%` }} className="bg-slate-600 transition-[width] duration-300" title={`${cat.iguales} estables`} />
                         </div>
                         <div className="flex items-center justify-between text-sm text-slate-300 tabular-nums">
-                          <span className="text-rose-400 font-medium">{cat.subieron} subas</span>
-                          <span className="text-emerald-400 font-medium">{cat.bajaron} bajas</span>
+                          <span className="text-rose-400 font-semibold">{cat.subieron} subas</span>
+                          <span className="text-emerald-400 font-semibold">{cat.bajaron} bajas</span>
                           <span className="text-slate-400">{cat.iguales}</span>
                         </div>
                       </div>
@@ -183,10 +183,10 @@ export function CategoryBreakdown({ categorias }: CategoryBreakdownProps) {
                       <span
                         className={
                           isDayUp
-                            ? "text-rose-400"
+                            ? "text-rose-400 font-bold"
                             : isDayDown
-                            ? "text-emerald-400"
-                            : "text-slate-300"
+                            ? "text-emerald-400 font-bold"
+                            : "text-slate-400 font-medium"
                         }
                       >
                         {varDia > 0 ? `+${varDia.toFixed(2)}%` : `${varDia.toFixed(2)}%`}
@@ -194,7 +194,7 @@ export function CategoryBreakdown({ categorias }: CategoryBreakdownProps) {
                     </td>
                     <td className="py-4 pl-4 pr-6 text-right tabular-nums">
                       <span
-                        className={`text-lg font-black tracking-tight ${
+                        className={`text-lg font-bold tracking-tight ${
                           isMonthUp
                             ? "text-rose-400"
                             : isMonthDown
