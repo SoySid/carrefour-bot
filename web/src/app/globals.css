@@ -3,20 +3,46 @@
 @tailwind utilities;
 
 :root {
-  --background: #0b0d11;
-  --foreground: #f1f3f7;
+  --background: #090d16;
+  --foreground: #f8fafc;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum";
   -webkit-font-smoothing: antialiased;
 }
 
-.font-mono {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+.delay-75 { animation-delay: 75ms; }
+.delay-150 { animation-delay: 150ms; }
+.delay-225 { animation-delay: 225ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-375 { animation-delay: 375ms; }
+
+@keyframes enterUp {
+  0% {
+    opacity: 0.05;
+    transform: translateY(16px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-enter {
+  animation: enterUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-enter,
+  .animate-fade-in-up,
+  .animate-fade-in {
+    animation: none !important;
+    transform: none !important;
+  }
 }
 
 /* Scroll horizontal con snap para móvil */

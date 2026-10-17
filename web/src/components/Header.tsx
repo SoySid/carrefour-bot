@@ -15,59 +15,59 @@ export function Header({ fechaHoy }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-surface-border bg-surface-50/90 backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-        <div className="flex items-center gap-6">
+    <header className="sticky top-0 z-40 w-full bg-surface-100 transition-colors">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6">
+        <div className="flex items-center gap-8">
           <a href="#" className="flex items-center gap-3 group">
-            <div className="h-8 w-8 overflow-hidden rounded-lg border border-white/10 bg-white p-0.5 shadow-sm transition-transform group-hover:scale-105">
+            <div className="h-9 w-9 overflow-hidden rounded-md bg-white p-0.5 transition-transform duration-200 group-hover:scale-105">
               <img
                 src="/logo.jpg"
                 alt="Logo Carrefour Tracker"
-                className="h-full w-full object-contain rounded-md"
+                className="h-full w-full object-contain rounded"
               />
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm sm:text-base font-bold tracking-tight text-zinc-100 group-hover:text-white transition-colors">
+            <div className="flex items-center gap-2.5">
+              <span className="text-base font-bold tracking-tight text-white group-hover:text-brand-400 transition-colors">
                 Carrefour Tracker
               </span>
-              <span className="hidden sm:inline-block rounded bg-surface-200 px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider text-zinc-400 border border-white/5">
-                IPC Diario
-              </span>
+              <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-200 text-sm text-slate-300">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                <span>Relevamiento diario</span>
+              </div>
             </div>
           </a>
 
-          {/* Enlaces de navegación en escritorio */}
-          <nav className="hidden md:flex items-center gap-5 text-xs font-medium text-zinc-400">
-            <a href="#canasta" className="hover:text-zinc-100 transition-colors">
+          <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
+            <a href="#canasta" className="hover:text-white transition-colors">
               Canasta
             </a>
-            <a href="#buscador" className="hover:text-zinc-100 transition-colors">
+            <a href="#buscador" className="hover:text-white transition-colors">
               Buscador
             </a>
-            <a href="#categorias" className="hover:text-zinc-100 transition-colors">
+            <a href="#rubros" className="hover:text-white transition-colors">
               Rubros
             </a>
-            <a href="#movimientos" className="hover:text-zinc-100 transition-colors">
-              Subas y Bajas
+            <a href="#movimientos" className="hover:text-white transition-colors">
+              Subas y bajas
             </a>
-            <a href="#metodologia" className="hover:text-zinc-100 transition-colors">
+            <a href="#metodologia" className="hover:text-white transition-colors">
               Metodología
             </a>
           </nav>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="hidden text-right text-xs text-zinc-400 sm:block">
-            <span className="block text-[11px] text-zinc-500">Corte diario</span>
-            <span className="text-zinc-300 font-mono text-xs">{formatFecha(fechaHoy)}</span>
+        <div className="flex items-center gap-4">
+          <div className="hidden sm:block text-right">
+            <span className="block text-sm text-slate-400">Último corte</span>
+            <span className="text-sm font-medium text-slate-200 tabular-nums">{formatFecha(fechaHoy)}</span>
           </div>
           <a
             href="https://t.me/carrefour_monitor_bot"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-surface-200 px-3 py-1.5 text-xs font-medium text-zinc-200 transition-all hover:bg-surface-300 hover:text-white"
+            className="flex items-center gap-2 rounded-md bg-brand-500 px-3.5 py-2 text-sm font-semibold text-white transition-transform duration-150 hover:bg-brand-600 active:scale-95"
           >
-            <Send className="h-3.5 w-3.5 text-blue-400" />
+            <Send className="h-4 w-4" />
             <span>Canal Telegram</span>
           </a>
         </div>

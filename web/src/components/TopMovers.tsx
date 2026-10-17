@@ -17,51 +17,57 @@ export function TopMovers({ topSubas, topBajas }: TopMoversProps) {
   };
 
   return (
-    <section id="movimientos" className="space-y-4 pt-4 sm:pt-6">
-      <div className="border-b border-surface-border pb-3">
-        <h2 className="text-xl font-bold tracking-tight text-zinc-100 sm:text-2xl">
+    <section id="movimientos" className="space-y-6 pt-6 sm:pt-8 animate-enter delay-75">
+      <div className="flex flex-col gap-1.5 max-w-3xl">
+        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
           Movimientos del Día
         </h2>
-        <p className="text-xs text-zinc-400 sm:text-sm">
+        <p className="text-base text-slate-300">
           Mayores aumentos y rebajas reales detectadas en el último corte diario.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Columna 1: Mayores Aumentos */}
-        <div className="rounded-xl border border-surface-border bg-surface-100 p-4 sm:p-5">
-          <div className="flex items-center gap-2 border-b border-surface-border pb-3">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20">
-              <ArrowUpRight className="h-4 w-4" />
+        <div className="rounded-2xl bg-surface-100 p-6 sm:p-7 space-y-4 animate-enter delay-150">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/15 text-rose-400">
+              <ArrowUpRight className="h-5 w-5" />
             </div>
-            <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-200">
-              Mayores Aumentos (24h)
-            </h3>
+            <div>
+              <h3 className="text-base font-bold text-white">
+                Mayores aumentos en 24h
+              </h3>
+              <span className="text-sm text-slate-300">Productos con mayor variación positiva</span>
+            </div>
           </div>
 
-          <div className="mt-3 divide-y divide-surface-border/50">
+          <div className="space-y-2 pt-2">
             {topSubas.length === 0 ? (
-              <p className="py-6 text-center text-xs text-zinc-500">
+              <p className="py-8 text-center text-sm text-slate-400">
                 No se registraron aumentos significativos en este corte.
               </p>
             ) : (
               topSubas.map((prod) => (
-                <div key={prod.id} className="py-2.5 flex items-center justify-between gap-3">
+                <div
+                  key={prod.id}
+                  className="flex items-center justify-between gap-4 p-3.5 rounded-xl hover:bg-surface-200 transition-colors duration-150"
+                >
                   <div className="min-w-0 flex-1">
-                    <span className="block text-xs font-medium text-zinc-200 truncate">
+                    <span className="block text-sm font-semibold text-white truncate">
                       {prod.nombre}
                     </span>
-                    <div className="flex items-center gap-2 text-[11px] font-mono text-zinc-400 mt-0.5">
-                      <span>{prod.categoria}</span>
+                    <div className="flex items-center gap-2 text-sm text-slate-300 mt-1 tabular-nums">
+                      <span className="text-slate-400">{prod.categoria}</span>
                       <span>•</span>
-                      <span className="line-through text-zinc-500">{formatPrecio(prod.precioAyer)}</span>
-                      <span>→</span>
-                      <span className="font-semibold text-zinc-200">{formatPrecio(prod.precioHoy)}</span>
+                      <span className="line-through text-slate-400">{formatPrecio(prod.precioAyer)}</span>
+                      <span>a</span>
+                      <span className="font-bold text-white">{formatPrecio(prod.precioHoy)}</span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="inline-flex items-center rounded bg-rose-500/10 px-2 py-0.5 text-xs font-mono font-bold text-rose-400 border border-rose-500/20">
+                  <div className="flex items-center gap-2.5 flex-shrink-0">
+                    <span className="inline-flex items-center rounded-md bg-rose-500/15 px-2.5 py-1 text-sm font-bold text-rose-400 tabular-nums">
                       +{Number(prod.varDia || 0).toFixed(1)}%
                     </span>
                     {prod.url && (
@@ -69,10 +75,10 @@ export function TopMovers({ topSubas, topBajas }: TopMoversProps) {
                         href={prod.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="rounded p-1 text-zinc-400 hover:bg-surface-200 hover:text-zinc-200 transition-colors"
+                        className="rounded-lg bg-surface-200 p-2 text-slate-300 hover:text-white transition-colors"
                         title="Ver en Carrefour"
                       >
-                        <ExternalLink className="h-3.5 w-3.5" />
+                        <ExternalLink className="h-4 w-4" />
                       </a>
                     )}
                   </div>
@@ -83,39 +89,45 @@ export function TopMovers({ topSubas, topBajas }: TopMoversProps) {
         </div>
 
         {/* Columna 2: Mayores Bajas */}
-        <div className="rounded-xl border border-surface-border bg-surface-100 p-4 sm:p-5">
-          <div className="flex items-center gap-2 border-b border-surface-border pb-3">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              <ArrowDownRight className="h-4 w-4" />
+        <div className="rounded-2xl bg-surface-100 p-6 sm:p-7 space-y-4 animate-enter delay-225">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400">
+              <ArrowDownRight className="h-5 w-5" />
             </div>
-            <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-200">
-              Mayores Bajas y Descuentos
-            </h3>
+            <div>
+              <h3 className="text-base font-bold text-white">
+                Mayores bajas y ofertas
+              </h3>
+              <span className="text-sm text-slate-300">Productos con rebajas reales de precio</span>
+            </div>
           </div>
 
-          <div className="mt-3 divide-y divide-surface-border/50">
+          <div className="space-y-2 pt-2">
             {topBajas.length === 0 ? (
-              <p className="py-6 text-center text-xs text-zinc-500">
+              <p className="py-8 text-center text-sm text-slate-400">
                 No se registraron bajas de precio en este corte.
               </p>
             ) : (
               topBajas.map((prod) => (
-                <div key={prod.id} className="py-2.5 flex items-center justify-between gap-3">
+                <div
+                  key={prod.id}
+                  className="flex items-center justify-between gap-4 p-3.5 rounded-xl hover:bg-surface-200 transition-colors duration-150"
+                >
                   <div className="min-w-0 flex-1">
-                    <span className="block text-xs font-medium text-zinc-200 truncate">
+                    <span className="block text-sm font-semibold text-white truncate">
                       {prod.nombre}
                     </span>
-                    <div className="flex items-center gap-2 text-[11px] font-mono text-zinc-400 mt-0.5">
-                      <span>{prod.categoria}</span>
+                    <div className="flex items-center gap-2 text-sm text-slate-300 mt-1 tabular-nums">
+                      <span className="text-slate-400">{prod.categoria}</span>
                       <span>•</span>
-                      <span className="line-through text-zinc-500">{formatPrecio(prod.precioAyer)}</span>
-                      <span>→</span>
-                      <span className="font-semibold text-emerald-400">{formatPrecio(prod.precioHoy)}</span>
+                      <span className="line-through text-slate-400">{formatPrecio(prod.precioAyer)}</span>
+                      <span>a</span>
+                      <span className="font-bold text-emerald-400">{formatPrecio(prod.precioHoy)}</span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="inline-flex items-center rounded bg-emerald-500/10 px-2 py-0.5 text-xs font-mono font-bold text-emerald-400 border border-emerald-500/20">
+                  <div className="flex items-center gap-2.5 flex-shrink-0">
+                    <span className="inline-flex items-center rounded-md bg-emerald-500/15 px-2.5 py-1 text-sm font-bold text-emerald-400 tabular-nums">
                       {Number(prod.varDia || 0).toFixed(1)}%
                     </span>
                     {prod.url && (
@@ -123,10 +135,10 @@ export function TopMovers({ topSubas, topBajas }: TopMoversProps) {
                         href={prod.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="rounded p-1 text-zinc-400 hover:bg-surface-200 hover:text-zinc-200 transition-colors"
+                        className="rounded-lg bg-surface-200 p-2 text-slate-300 hover:text-white transition-colors"
                         title="Ver en Carrefour"
                       >
-                        <ExternalLink className="h-3.5 w-3.5" />
+                        <ExternalLink className="h-4 w-4" />
                       </a>
                     )}
                   </div>

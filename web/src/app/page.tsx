@@ -6,7 +6,6 @@ import { ProductSearch } from "@/components/ProductSearch";
 import { CategoryBreakdown } from "@/components/CategoryBreakdown";
 import { TopMovers } from "@/components/TopMovers";
 import { Methodology } from "@/components/Methodology";
-import { MobileActionBar } from "@/components/MobileActionBar";
 import { DashboardData } from "@/lib/types";
 
 // Revalidar cada 1 hora para máxima velocidad y ahorro de recursos en Neon
@@ -39,10 +38,10 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col pb-20 md:pb-12">
+    <div className="min-h-[100dvh] flex flex-col overflow-x-hidden">
       <Header fechaHoy={data.stats.fechaHoy} />
 
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 sm:px-6 space-y-8 sm:space-y-12">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 sm:px-6 space-y-12 sm:space-y-16 overflow-hidden">
         <HeroStats stats={data.stats} />
         <ProductSearch />
         <CategoryBreakdown categorias={data.categorias} />
@@ -50,21 +49,24 @@ export default async function HomePage() {
         <Methodology />
       </main>
 
-      <footer className="mt-16 border-t border-surface-border bg-surface-100 py-8 text-center text-xs text-zinc-500">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© {new Date().getFullYear()} Carrefour Tracker. Datos públicos obtenidos con fines informativos y analíticos.</p>
-          <div className="flex items-center gap-4 text-zinc-400">
-            <a href="https://github.com/sidarg/carrefour-bot" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-200 transition-colors">
-              GitHub
-            </a>
-            <a href="https://t.me/carrefour_monitor_bot" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-200 transition-colors">
-              Canal Telegram
-            </a>
+      <footer className="mt-20 bg-surface-100 py-12 text-sm text-slate-400">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 space-y-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p>© {new Date().getFullYear()} Carrefour Tracker. Datos públicos obtenidos con fines informativos y analíticos.</p>
+            <div className="flex items-center gap-6 text-slate-300">
+              <a href="https://github.com/sidarg/carrefour-bot" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                GitHub
+              </a>
+              <a href="https://t.me/carrefour_monitor_bot" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                Canal Telegram
+              </a>
+            </div>
           </div>
+          <p className="text-sm text-slate-400 leading-relaxed max-w-prose">
+            Fotografías: “Supermarket, Ferney-Voltaire” por Matti Blume (CC BY-SA 4.0), “Friendly Express Supermarket” por 999real (CC0), “Supermarket in Recife” por Wilfredor (CC BY-SA 4.0), “Supermarket na Rua Santo Cristo” por kaart_2 (CC BY-SA 4.0), vía Wikimedia Commons.
+          </p>
         </div>
       </footer>
-
-      <MobileActionBar />
     </div>
   );
 }

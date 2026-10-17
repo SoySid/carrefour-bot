@@ -16,18 +16,37 @@ const config: Config = {
         brand: {
           50: "#eff6ff",
           100: "#dbeafe",
-          400: "#60a5fa",
-          500: "#1d4ed8",
-          600: "#1e40af",
-          700: "#1e3a8a",
+          400: "#38bdf8",
+          500: "#2563eb",
+          600: "#1d4ed8",
+          700: "#1e40af",
         },
         surface: {
-          50: "#0b0d11",
-          100: "#11141b",
-          200: "#171c26",
-          300: "#202634",
-          border: "#232836",
-        }
+          50: "#090d16",
+          100: "#0f172a",
+          200: "#18233c",
+          300: "#243456",
+          border: "#1e2c48",
+        },
+      },
+      keyframes: {
+        fadeInUp: {
+          "0%": { opacity: "0", transform: "translateY(16px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        fadeIn: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        pulseGlow: {
+          "0%, 100%": { opacity: "1", transform: "scale(1)" },
+          "50%": { opacity: "0.6", transform: "scale(1.15)" },
+        },
+      },
+      animation: {
+        "fade-in-up": "fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both",
+        "fade-in": "fadeIn 0.35s ease-out both",
+        "pulse-glow": "pulseGlow 2.5s ease-in-out infinite",
       },
     },
   },

@@ -61,27 +61,25 @@ export function ProductSearch() {
   };
 
   return (
-    <section id="buscador" className="space-y-4 pt-4 sm:pt-6">
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 border-b border-surface-border pb-3">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight text-zinc-100 sm:text-2xl">
-            Buscador de Productos
-          </h2>
-          <p className="text-xs text-zinc-400 sm:text-sm">
-            Precios vigentes y evolución histórica por artículo individual.
-          </p>
-        </div>
+    <section id="buscador" className="space-y-6 pt-6 sm:pt-8 animate-enter delay-75">
+      <div className="flex flex-col gap-1.5 max-w-3xl">
+        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+          Buscador de Productos
+        </h2>
+        <p className="text-base text-slate-300">
+          Consultá precios vigentes y evolución histórica por artículo individual en tiempo real.
+        </p>
       </div>
 
-      <div className="relative">
+      <div className="relative animate-enter delay-150">
         <div className="relative flex items-center">
-          <Search className="absolute left-3.5 h-4 w-4 text-zinc-400" />
+          <Search className="absolute left-4 h-5 w-5 text-slate-400 pointer-events-none" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar por nombre, marca o categoría (ej. leche, café, fideos)..."
-            className="w-full rounded-xl border border-surface-border bg-surface-100 py-3 pl-10 pr-10 text-sm text-zinc-100 placeholder-zinc-500 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 transition-colors"
+            placeholder="Buscar por producto, marca o rubro (ej. leche, café, fideos)..."
+            className="w-full rounded-2xl bg-surface-100 py-4 pl-12 pr-12 text-base text-white placeholder-slate-400 focus:bg-surface-200 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors duration-200"
           />
           {query ? (
             <button
@@ -89,62 +87,63 @@ export function ProductSearch() {
                 setQuery("");
                 setResults([]);
               }}
-              className="absolute right-3.5 text-zinc-400 hover:text-zinc-200"
+              className="absolute right-4 text-slate-400 hover:text-white transition-colors p-1"
+              title="Borrar búsqueda"
             >
-              <X className="h-4 w-4" />
+              <X className="h-5 w-5" />
             </button>
           ) : loading ? (
-            <Loader2 className="absolute right-3.5 h-4 w-4 animate-spin text-zinc-400" />
+            <Loader2 className="absolute right-4 h-5 w-5 animate-spin text-brand-400" />
           ) : null}
         </div>
 
         {/* Resultados de búsqueda */}
         {results.length > 0 && (
-          <div className="mt-2 divide-y divide-surface-border/50 rounded-xl border border-surface-border bg-surface-100 shadow-xl max-h-80 overflow-y-auto">
+          <div className="mt-2.5 rounded-2xl bg-surface-100 p-2 max-h-80 overflow-y-auto space-y-1 z-30 relative animate-fade-in">
             {results.map((prod) => (
               <div
                 key={prod.id}
                 onClick={() => handleSelectProduct(prod)}
-                className="flex items-center justify-between p-3 transition-colors hover:bg-surface-200 cursor-pointer"
+                className="flex items-center justify-between p-3.5 rounded-xl transition-colors duration-150 hover:bg-surface-200 cursor-pointer"
               >
-                <div className="min-w-0 flex-1 pr-3">
-                  <span className="block text-xs font-semibold text-zinc-200 truncate">
+                <div className="min-w-0 flex-1 pr-4">
+                  <span className="block text-sm font-semibold text-white truncate">
                     {prod.nombre}
                   </span>
-                  <div className="flex items-center gap-2 text-[11px] text-zinc-400 mt-0.5">
+                  <div className="flex items-center gap-2 text-sm text-slate-300 mt-1">
                     <span>{prod.categoria}</span>
                     <span>•</span>
-                    <span className="text-zinc-500 font-mono">ID: {prod.id}</span>
+                    <span className="text-slate-400 tabular-nums">Código: {prod.id}</span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 flex-shrink-0 text-right">
+                <div className="flex items-center gap-3.5 flex-shrink-0 text-right">
                   <div>
-                    <span className="block text-xs font-bold font-mono text-zinc-100">
+                    <span className="block text-sm font-bold text-white tabular-nums">
                       {formatPrecio(prod.precioActual)}
                     </span>
                     {prod.varDia !== null ? (
                       <span
-                        className={`text-[10px] font-mono font-semibold ${
+                        className={`text-sm font-semibold tabular-nums ${
                           prod.varDia > 0
                             ? "text-rose-400"
                             : prod.varDia < 0
                             ? "text-emerald-400"
-                            : "text-zinc-400"
+                            : "text-slate-400"
                         }`}
                       >
                         {prod.varDia > 0 ? `+${prod.varDia.toFixed(1)}%` : `${prod.varDia.toFixed(1)}%`}
                       </span>
                     ) : (
-                      <span className="text-[10px] text-zinc-500">Sin datos prev.</span>
+                      <span className="text-sm text-slate-400">Sin cambio</span>
                     )}
                   </div>
-                  <button
-                    className="rounded-lg bg-surface-200 p-1.5 text-zinc-400 hover:text-white transition-colors"
+                  <div
+                    className="rounded-lg bg-surface-200 p-2 text-slate-300 transition-colors group-hover:text-white"
                     title="Ver historial"
                   >
                     <LineChart className="h-4 w-4" />
-                  </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -152,7 +151,7 @@ export function ProductSearch() {
         )}
 
         {query.trim().length >= 2 && !loading && results.length === 0 && (
-          <div className="mt-2 rounded-xl border border-surface-border bg-surface-100 p-4 text-center text-xs text-zinc-400">
+          <div className="mt-2.5 rounded-2xl bg-surface-100 p-5 text-center text-sm text-slate-300">
             No se encontraron productos coincidentes para "{query}".
           </div>
         )}
@@ -160,18 +159,18 @@ export function ProductSearch() {
 
       {/* Modal / Ficha de Historial de Precio */}
       {selectedProduct && (
-        <div className="rounded-xl border border-white/10 bg-surface-100 p-4 sm:p-5 shadow-2xl">
-          <div className="flex items-start justify-between gap-4 border-b border-surface-border pb-3">
+        <div className="rounded-2xl bg-surface-100 p-6 sm:p-7 space-y-5 animate-fade-in-up" data-ui="true">
+          <div className="flex items-start justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2">
-                <span className="rounded bg-surface-200 px-2 py-0.5 text-[10px] font-mono font-semibold text-zinc-300 border border-white/5">
+              <div className="flex items-center gap-2.5">
+                <span className="rounded-md bg-surface-200 px-2.5 py-1 text-xs font-medium text-slate-200">
                   {selectedProduct.categoria}
                 </span>
-                <span className="text-xs text-zinc-400 font-mono">
-                  ID: {selectedProduct.id}
+                <span className="text-xs text-slate-400 tabular-nums">
+                  Código: {selectedProduct.id}
                 </span>
               </div>
-              <h3 className="text-sm sm:text-base font-bold text-zinc-100 mt-1">
+              <h3 className="text-lg sm:text-xl font-bold text-white mt-2">
                 {selectedProduct.nombre}
               </h3>
             </div>
@@ -181,49 +180,49 @@ export function ProductSearch() {
                   href={selectedProduct.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1 rounded-lg border border-white/10 bg-surface-200 px-2.5 py-1 text-xs text-zinc-300 hover:text-white transition-colors"
+                  className="flex items-center gap-1.5 rounded-lg bg-brand-500 px-3.5 py-2 text-xs font-semibold text-white transition-transform duration-150 hover:bg-brand-600 active:scale-95"
                 >
                   <span>Ver en Carrefour</span>
-                  <ExternalLink className="h-3 w-3" />
+                  <ExternalLink className="h-3.5 w-3.5" />
                 </a>
               )}
               <button
                 onClick={() => setSelectedProduct(null)}
-                className="rounded-lg p-1 text-zinc-400 hover:text-zinc-200 transition-colors"
+                className="rounded-lg bg-surface-200 p-2 text-slate-400 hover:text-white transition-colors"
+                title="Cerrar detalle"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
           </div>
 
-          <div className="mt-4">
+          <div>
             {loadingHistory ? (
-              <div className="flex items-center justify-center py-10 text-xs text-zinc-400 gap-2">
-                <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-                Cargando serie temporal...
+              <div className="flex items-center justify-center py-12 text-sm text-slate-300 gap-2.5">
+                <Loader2 className="h-5 w-5 animate-spin text-brand-400" />
+                <span>Cargando serie temporal...</span>
               </div>
             ) : history.length < 2 ? (
-              <div className="py-8 text-center text-xs text-zinc-400">
+              <div className="py-10 text-center text-sm text-slate-300">
                 Historial insuficiente para trazar la curva temporal (menos de 2 cortes registrados).
               </div>
             ) : (
-              <div>
-                <div className="flex items-center justify-between text-xs mb-3">
-                  <span className="text-zinc-400 font-mono text-[11px]">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-300 tabular-nums">
                     {history.length} cortes registrados
                   </span>
-                  <div className="flex items-center gap-3 font-mono text-[11px]">
-                    <span className="text-zinc-400">
-                      Mín: <strong className="text-emerald-400 font-bold">{formatPrecio(Math.min(...history.map(h => h.precio)))}</strong>
+                  <div className="flex items-center gap-4 text-sm tabular-nums">
+                    <span className="text-slate-300">
+                      Mínimo: <strong className="text-emerald-400 font-bold">{formatPrecio(Math.min(...history.map(h => h.precio)))}</strong>
                     </span>
-                    <span className="text-zinc-400">
-                      Máx: <strong className="text-rose-400 font-bold">{formatPrecio(Math.max(...history.map(h => h.precio)))}</strong>
+                    <span className="text-slate-300">
+                      Máximo: <strong className="text-rose-400 font-bold">{formatPrecio(Math.max(...history.map(h => h.precio)))}</strong>
                     </span>
                   </div>
                 </div>
 
-                {/* Gráfico SVG SVG Line Chart nativo */}
-                <div className="h-48 w-full overflow-hidden rounded-lg bg-surface-200/50 p-2 border border-white/5">
+                <div className="h-48 w-full max-w-full overflow-hidden rounded-xl bg-surface-200 p-3">
                   <PriceChart points={history} />
                 </div>
               </div>
@@ -261,7 +260,7 @@ function PriceChart({ points }: { points: PricePoint[] }) {
   const areaD = `${pathD} L ${coords[coords.length - 1].x} ${height - paddingY} L ${coords[0].x} ${height - paddingY} Z`;
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full">
+    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full block">
       <defs>
         <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#2563eb" stopOpacity="0.2" />
@@ -275,7 +274,7 @@ function PriceChart({ points }: { points: PricePoint[] }) {
         y1={paddingY}
         x2={width - paddingX}
         y2={paddingY}
-        stroke="#232836"
+        stroke="#243456"
         strokeDasharray="4 4"
       />
       <line
@@ -283,22 +282,22 @@ function PriceChart({ points }: { points: PricePoint[] }) {
         y1={height - paddingY}
         x2={width - paddingX}
         y2={height - paddingY}
-        stroke="#232836"
+        stroke="#243456"
       />
 
       {/* Área y línea */}
       <path d={areaD} fill="url(#areaGradient)" />
-      <path d={pathD} fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={pathD} fill="none" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
 
       {/* Puntos destacados */}
-      <circle cx={coords[0].x} cy={coords[0].y} r="3" fill="#3b82f6" />
-      <circle cx={coords[coords.length - 1].x} cy={coords[coords.length - 1].y} r="4" fill="#2563eb" stroke="#ffffff" strokeWidth="1.5" />
+      <circle cx={coords[0].x} cy={coords[0].y} r="3.5" fill="#38bdf8" />
+      <circle cx={coords[coords.length - 1].x} cy={coords[coords.length - 1].y} r="4.5" fill="#2563eb" stroke="#ffffff" strokeWidth="1.5" />
 
       {/* Etiquetas de fechas */}
-      <text x={paddingX} y={height - 8} fill="#71717a" fontSize="10" textAnchor="start" fontFamily="monospace">
+      <text x={paddingX} y={height - 8} fill="#94a3b8" fontSize="11" textAnchor="start" fontFamily="sans-serif">
         {points[0].fecha}
       </text>
-      <text x={width - paddingX} y={height - 8} fill="#71717a" fontSize="10" textAnchor="end" fontFamily="monospace">
+      <text x={width - paddingX} y={height - 8} fill="#94a3b8" fontSize="11" textAnchor="end" fontFamily="sans-serif">
         {points[points.length - 1].fecha}
       </text>
     </svg>
