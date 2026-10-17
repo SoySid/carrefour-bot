@@ -3,13 +3,13 @@
 @tailwind utilities;
 
 :root {
-  --background: #0f172a;
-  --foreground: #f8fafc;
+  --background: #000000;
+  --foreground: #ffffff;
 }
 
 body {
-  color: #f8fafc;
-  background-color: #0f172a;
+  color: #ffffff;
+  background-color: #000000;
   font-size: 16px;
   line-height: 1.5;
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;

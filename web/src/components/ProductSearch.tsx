@@ -342,7 +342,7 @@ function PriceChart({ points }: { points: PricePoint[] }) {
         y1={paddingY}
         x2={width - paddingX}
         y2={paddingY}
-        stroke="#334155"
+        stroke="#1f2330"
         strokeDasharray="4 4"
       />
       <line
@@ -350,7 +350,7 @@ function PriceChart({ points }: { points: PricePoint[] }) {
         y1={height - paddingY}
         x2={width - paddingX}
         y2={height - paddingY}
-        stroke="#475569"
+        stroke="#242838"
       />
 
       {/* Área y línea */}
@@ -359,7 +359,7 @@ function PriceChart({ points }: { points: PricePoint[] }) {
 
       {/* Puntos destacados */}
       <circle cx={coords[0].x} cy={coords[0].y} r="3.5" fill="#38bdf8" />
-      <circle cx={coords[coords.length - 1].x} cy={coords[coords.length - 1].y} r="4.5" fill="#60a5fa" stroke="#0f172a" strokeWidth="1.5" />
+      <circle cx={coords[coords.length - 1].x} cy={coords[coords.length - 1].y} r="4.5" fill="#60a5fa" stroke="#0d0f14" strokeWidth="1.5" />
 
       {/* Etiquetas de fechas */}
       <text x={paddingX} y={height - 8} fill="#94a3b8" fontSize="11" textAnchor="start" fontFamily="sans-serif">
