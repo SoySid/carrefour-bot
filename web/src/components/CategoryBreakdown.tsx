@@ -212,32 +212,6 @@ export function CategoryBreakdown({ categorias }: CategoryBreakdownProps) {
           </table>
         </div>
       </div>
-
-      {/* Galería de contexto del sector de supermercados */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
-        <div className="overflow-hidden rounded-2xl bg-surface-100 aspect-[16/9] animate-enter delay-225">
-          <img
-            src="/assets/friendly-express-supermarket-el-socorro-main-road.jpg"
-            alt="Pasillo de abarrotes y productos secos"
-            className="h-full w-full object-cover"
-            width={1920}
-            height={1322}
-            loading="lazy"
-            decoding="async"
-          />
-        </div>
-        <div className="overflow-hidden rounded-2xl bg-surface-100 aspect-[16/9] animate-enter delay-300">
-          <img
-            src="/assets/supermarket-in-recife-pernambuco-brazil.jpg"
-            alt="Sector de góndolas y bebidas"
-            className="h-full w-full object-cover"
-            width={1920}
-            height={1160}
-            loading="lazy"
-            decoding="async"
-          />
-        </div>
-      </div>
     </section>
   );
 }

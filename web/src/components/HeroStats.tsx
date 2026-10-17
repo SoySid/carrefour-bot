@@ -28,18 +28,6 @@ export function HeroStats({ stats }: HeroStatsProps) {
         </p>
       </div>
 
-      {/* Imagen representativa del sector */}
-      <div className="overflow-hidden rounded-2xl bg-surface-100 aspect-[16/7] w-full animate-enter delay-75">
-        <img
-          src="/assets/supermarket-ferney-voltaire-eb190326.jpg"
-          alt="Góndolas de supermercado con frutas y verduras frescas"
-          className="h-full w-full object-cover"
-          width={1920}
-          height={1280}
-          decoding="async"
-        />
-      </div>
-
       <div data-ui="true" className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {/* Métrica 1: Variación Diaria */}
         <div className="rounded-2xl bg-surface-100 p-6 sm:p-7 transition-transform duration-200 hover:bg-surface-200 hover:-translate-y-0.5 animate-enter delay-150">

@@ -62,9 +62,6 @@ export default async function HomePage() {
               </a>
             </div>
           </div>
-          <p className="text-sm text-slate-400 leading-relaxed max-w-prose">
-            Fotografías: “Supermarket, Ferney-Voltaire” por Matti Blume (CC BY-SA 4.0), “Friendly Express Supermarket” por 999real (CC0), “Supermarket in Recife” por Wilfredor (CC BY-SA 4.0), “Supermarket na Rua Santo Cristo” por kaart_2 (CC BY-SA 4.0), vía Wikimedia Commons.
-          </p>
         </div>
       </footer>
     </div>

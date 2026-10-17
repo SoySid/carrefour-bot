@@ -49,18 +49,6 @@ export function Methodology() {
             </div>
           ))}
         </div>
-
-        <div className="overflow-hidden rounded-xl bg-surface-200 aspect-[21/9] w-full animate-enter delay-300">
-          <img
-            src="/assets/supermarket-na-rua-santo-cristo-rio-de.jpg"
-            alt="Salón de ventas y góndolas de supermercado"
-            className="h-full w-full object-cover"
-            width={1920}
-            height={1080}
-            loading="lazy"
-            decoding="async"
-          />
-        </div>
       </div>
     </section>
   );
