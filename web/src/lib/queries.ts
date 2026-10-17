@@ -167,36 +167,63 @@ export async function getDashboardData(): Promise<DashboardData> {
   };
 }
 
-export async function searchProducts(query: string): Promise<ProductSearchResult[]> {
-  if (!query || query.trim().length < 2) return [];
+let cachedDates: { f_hoy: string; f_ayer: string; timestamp: number } | null = null;
 
-  const cleanQuery = `%${query.trim()}%`;
+async function getLatestDates(): Promise<{ f_hoy: string; f_ayer: string }> {
+  const now = Date.now();
+  if (cachedDates && now - cachedDates.timestamp < 1000 * 60 * 10) {
+    return cachedDates;
+  }
+
+  const res = await sql`
+    SELECT 
+      TO_CHAR(MAX(fecha), 'YYYY-MM-DD') AS f_hoy,
+      TO_CHAR((SELECT MAX(fecha) FROM historial_precios WHERE fecha < (SELECT MAX(fecha) FROM historial_precios)), 'YYYY-MM-DD') AS f_ayer
+    FROM historial_precios;
+  `;
+
+  const row = res[0] || {};
+  cachedDates = {
+    f_hoy: row.f_hoy || new Date().toISOString().split("T")[0],
+    f_ayer: row.f_ayer || "",
+    timestamp: now,
+  };
+  return cachedDates;
+}
+
+export async function searchProducts(query: string): Promise<ProductSearchResult[]> {
+  const term = query.trim();
+  if (!term || term.length < 2) return [];
+
+  const { f_hoy, f_ayer } = await getLatestDates();
+  const cleanQuery = `%${term}%`;
+  const prefixQuery = `${term}%`;
 
   const results = await sql`
-    WITH ultima_fecha AS (
-      SELECT MAX(fecha) AS f_hoy,
-             (SELECT MAX(fecha) FROM historial_precios WHERE fecha < (SELECT MAX(fecha) FROM historial_precios)) AS f_ayer
-      FROM historial_precios
+    WITH matched AS (
+      SELECT id, nombre, categoria, url, imagen_url
+      FROM productos
+      WHERE activo = TRUE 
+        AND (nombre ILIKE ${cleanQuery} OR categoria ILIKE ${cleanQuery})
+      ORDER BY (nombre ILIKE ${prefixQuery}) DESC, nombre ASC
+      LIMIT 20
     )
     SELECT 
-      p.id,
-      p.nombre,
-      p.categoria,
-      p.url,
+      m.id,
+      m.nombre,
+      m.categoria,
+      m.url,
+      m.imagen_url,
       h_hoy.precio::float AS precio_actual,
       CASE 
         WHEN h_ayer.precio IS NOT NULL AND h_ayer.precio > 0 
         THEN ROUND(((h_hoy.precio - h_ayer.precio) / h_ayer.precio) * 100, 2)::float 
         ELSE NULL 
       END AS var_dia
-    FROM productos p
-    CROSS JOIN ultima_fecha uf
-    JOIN historial_precios h_hoy ON h_hoy.producto_id = p.id AND h_hoy.fecha = uf.f_hoy
-    LEFT JOIN historial_precios h_ayer ON h_ayer.producto_id = p.id AND h_ayer.fecha = uf.f_ayer
-    WHERE p.activo = TRUE 
-      AND (p.nombre ILIKE ${cleanQuery} OR p.categoria ILIKE ${cleanQuery})
-    ORDER BY p.nombre ASC
-    LIMIT 20;
+    FROM matched m
+    LEFT JOIN historial_precios h_hoy ON h_hoy.producto_id = m.id AND h_hoy.fecha = ${f_hoy}::date
+    LEFT JOIN historial_precios h_ayer ON h_ayer.producto_id = m.id AND h_ayer.fecha = ${f_ayer}::date
+    ORDER BY (m.nombre ILIKE ${prefixQuery}) DESC, m.nombre ASC;
   `;
 
   return (results || []).map((row: any) => ({
@@ -204,6 +231,7 @@ export async function searchProducts(query: string): Promise<ProductSearchResult
     nombre: String(row.nombre || ""),
     categoria: String(row.categoria || ""),
     url: String(row.url || ""),
+    imagenUrl: row.imagen_url ? String(row.imagen_url) : null,
     precioActual: Number(row.precio_actual || 0),
     varDia: row.var_dia !== null && row.var_dia !== undefined ? Number(row.var_dia) : null,
   }));

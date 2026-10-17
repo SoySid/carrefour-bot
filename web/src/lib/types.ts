@@ -45,6 +45,7 @@ export interface ProductSearchResult {
   url: string;
   precioActual: number;
   varDia: number | null;
+  imagenUrl?: string | null;
 }
 
 export interface PricePoint {

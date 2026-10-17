@@ -98,6 +98,7 @@ def init_db(cursor):
     # Migraciones si las columnas no existen o para ajustar tipos
     cursor.execute("""
     ALTER TABLE productos ADD COLUMN IF NOT EXISTS categoria VARCHAR(100);
+    ALTER TABLE productos ADD COLUMN IF NOT EXISTS imagen_url TEXT;
     ALTER TABLE productos ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
     ALTER TABLE productos ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
     ALTER TABLE productos ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
@@ -106,6 +107,8 @@ def init_db(cursor):
 
     # Índices para acelerar búsquedas y reportes históricos
     cursor.execute("""
+    CREATE EXTENSION IF NOT EXISTS pg_trgm;
+    CREATE INDEX IF NOT EXISTS idx_productos_nombre_trgm ON productos USING gin (nombre gin_trgm_ops);
     CREATE INDEX IF NOT EXISTS idx_historial_precios_fecha ON historial_precios (fecha);
     CREATE INDEX IF NOT EXISTS idx_historial_precios_prod_fecha_desc ON historial_precios (producto_id, fecha DESC);
     CREATE INDEX IF NOT EXISTS idx_historial_precios_prod_fecha_asc ON historial_precios (producto_id, fecha ASC);
@@ -192,6 +195,9 @@ def fetch_products_for_task(category_path, parent_cat_name, task_name, limit=Non
                         continue
 
                     primary_item = items_list[0]
+                    images = primary_item.get("images") or []
+                    image_url = images[0].get("imageUrl") if images else None
+
                     sellers = primary_item.get("sellers")
                     if not sellers:
                         continue
@@ -236,7 +242,8 @@ def fetch_products_for_task(category_path, parent_cat_name, task_name, limit=Non
                             "nombre": str(product_name).strip(),
                             "categoria": parent_cat_name,
                             "url": str(product_url).strip(),
-                            "precio": price
+                            "precio": price,
+                            "imagen_url": str(image_url).strip() if image_url else None
                         })
 
                         if limit and len(products) >= limit:
@@ -289,24 +296,25 @@ def save_products_and_prices(conn, cursor, all_products_today):
     fecha_actual = date.today()
 
     productos_data = [
-        (p["id"], p["nombre"], p["categoria"], p["url"])
+        (p["id"], p["nombre"], p["categoria"], p["url"], p.get("imagen_url"))
         for p in all_products_today
     ]
 
     psycopg2.extras.execute_values(
         cursor,
         """
-        INSERT INTO productos (id, nombre, categoria, url, activo, updated_at)
+        INSERT INTO productos (id, nombre, categoria, url, imagen_url, activo, updated_at)
         VALUES %s
         ON CONFLICT (id) DO UPDATE SET
             nombre = EXCLUDED.nombre,
             categoria = EXCLUDED.categoria,
             url = EXCLUDED.url,
+            imagen_url = COALESCE(EXCLUDED.imagen_url, productos.imagen_url),
             activo = TRUE,
             updated_at = CURRENT_TIMESTAMP;
         """,
         productos_data,
-        template="(%s, %s, %s, %s, TRUE, CURRENT_TIMESTAMP)",
+        template="(%s, %s, %s, %s, %s, TRUE, CURRENT_TIMESTAMP)",
         page_size=1000
     )
 
