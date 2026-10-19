@@ -4,7 +4,7 @@ __pycache__/
 *.pyc
 
 # Archivos de datos locales y reportes
-*.json
+historial.json
 *.xlsx
 *.csv
 
