@@ -3,20 +3,20 @@ import React from "react";
 export function Methodology() {
   const points = [
     {
-      title: "Extracción exhaustiva sin truncar",
-      desc: "Desglose por subcategorías en la API oficial de VTEX, abarcando más de 25.000 artículos y superando el límite tradicional de 2.500 resultados de la plataforma.",
+      title: "Canasta Familiar Ponderada (IPC)",
+      desc: "El índice general pondera el impacto de cada departamento según la estructura de consumo familiar (ej. Carnes 22%, Almacén 20%, Lácteos 15%), evitando que rubros con exceso de artículos desvíen la medición.",
     },
     {
-      title: "Stock real y venta directa",
-      desc: "Solo se computan productos con stock positivo disponible y vendidos directamente por Carrefour (sellerId=1), excluyendo marketplace o publicaciones de terceros.",
+      title: "Filtro riguroso anti-outliers",
+      desc: "Exclusión de subcategorías no esenciales (mopas, cestos automáticos, ortopedia, maquillaje) y acotación estadística de variaciones extremas causadas por errores de carga en góndola.",
     },
     {
-      title: "Cálculo de variación interdiaria",
-      desc: "La variación de la canasta compara cada producto contra su precio registrado el día previo y contra el cierre o apertura del mes en curso.",
+      title: "Stock real y venta directa Carrefour",
+      desc: "Solo se computan productos con stock positivo disponible y vendidos directamente por Carrefour (sellerId=1), excluyendo publicaciones de terceros y precios placeholder de marketplace.",
     },
     {
       title: "Pipeline matutino automatizado",
-      desc: "El relevamiento se ejecuta diariamente a las 08:35 ART mediante GitHub Actions y persiste el histórico en Neon PostgreSQL.",
+      desc: "El relevamiento se ejecuta diariamente a las 08:35 ART mediante GitHub Actions y persiste el histórico en Neon PostgreSQL con sincronización de estado activo.",
     },
   ];
 

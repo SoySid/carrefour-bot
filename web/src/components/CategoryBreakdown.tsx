@@ -37,27 +37,26 @@ interface CategoryMeta {
 }
 
 const CATEGORY_MAP: Record<string, { icon: React.ElementType; color: string; badge: string }> = {
-  "Almacén": { icon: Package, color: "text-amber-400 bg-amber-500/15", badge: "Alimentos" },
-  "Desayuno y merienda": { icon: Coffee, color: "text-orange-400 bg-orange-500/15", badge: "Desayuno" },
-  "Bebidas": { icon: Wine, color: "text-sky-400 bg-sky-500/15", badge: "Bebidas" },
-  "Lácteos y productos frescos": { icon: Milk, color: "text-blue-400 bg-blue-500/15", badge: "Lácteos" },
   "Carnes y pescados": { icon: Fish, color: "text-rose-400 bg-rose-500/15", badge: "Carnicería" },
+  "Almacén": { icon: Package, color: "text-amber-400 bg-amber-500/15", badge: "Alimentos" },
+  "Lácteos y productos frescos": { icon: Milk, color: "text-blue-400 bg-blue-500/15", badge: "Lácteos" },
   "Frutas y verduras": { icon: Apple, color: "text-emerald-400 bg-emerald-500/15", badge: "Verdulería" },
   "Panadería": { icon: Croissant, color: "text-amber-300 bg-amber-400/15", badge: "Panadería" },
-  "Congelados": { icon: Snowflake, color: "text-cyan-400 bg-cyan-500/15", badge: "Freezer" },
+  "Desayuno y merienda": { icon: Coffee, color: "text-orange-400 bg-orange-500/15", badge: "Desayuno" },
+  "Bebidas": { icon: Wine, color: "text-sky-400 bg-sky-500/15", badge: "Bebidas" },
   "Limpieza": { icon: Sparkles, color: "text-sky-400 bg-sky-500/15", badge: "Hogar" },
-  "Perfumería y farmacia": { icon: HeartPulse, color: "text-teal-400 bg-teal-500/15", badge: "Cuidado" },
-  "Mascotas": { icon: PawPrint, color: "text-emerald-300 bg-emerald-400/15", badge: "Animales" },
-  "Mundo Bebé": { icon: Baby, color: "text-rose-300 bg-rose-400/15", badge: "Infantil" },
+  "Perfumería y farmacia": { icon: HeartPulse, color: "text-teal-400 bg-teal-500/15", badge: "Higiene" },
+  "Congelados": { icon: Snowflake, color: "text-cyan-400 bg-cyan-500/15", badge: "Freezer" },
 };
 
-type SortCriteria = "mes" | "dia" | "productos";
+type SortCriteria = "peso" | "mes" | "dia" | "productos";
 
 export function CategoryBreakdown({ categorias }: CategoryBreakdownProps) {
-  const [sortKey, setSortKey] = useState<SortCriteria>("mes");
+  const [sortKey, setSortKey] = useState<SortCriteria>("peso");
 
   const sortedCategories = useMemo(() => {
     return [...categorias].sort((a, b) => {
+      if (sortKey === "peso") return (Number(b.peso) || 0) - (Number(a.peso) || 0);
       if (sortKey === "mes") return (Number(b.varMes) || 0) - (Number(a.varMes) || 0);
       if (sortKey === "dia") return (Number(b.varDia) || 0) - (Number(a.varDia) || 0);
       return (Number(b.totalProductos) || 0) - (Number(a.totalProductos) || 0);
@@ -72,12 +71,23 @@ export function CategoryBreakdown({ categorias }: CategoryBreakdownProps) {
             Variación por rubro
           </h2>
           <p className="text-base text-slate-300 mt-1">
-            Comparativa diaria y acumulada mensual en los {categorias.length} departamentos auditados.
+            Ponderación estilo IPC Canasta Familiar auditando {categorias.length} departamentos esenciales.
           </p>
         </div>
 
         {/* Selector de ordenamiento */}
         <div data-ui="true" className="flex items-center gap-1.5 rounded-xl bg-surface-100 p-1.5 self-start sm:self-auto border border-surface-200">
+          <button
+            onClick={() => setSortKey("peso")}
+            className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors duration-150 ${
+              sortKey === "peso"
+                ? "bg-brand-600 text-white"
+                : "text-slate-400 hover:text-white hover:bg-surface-200"
+            }`}
+          >
+            <Layers className="h-4 w-4 text-brand-400" />
+            <span>Ponderación</span>
+          </button>
           <button
             onClick={() => setSortKey("mes")}
             className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors duration-150 ${
@@ -157,9 +167,14 @@ export function CategoryBreakdown({ categorias }: CategoryBreakdownProps) {
                         <span className="block font-semibold text-white text-base">
                           {cat.categoria}
                         </span>
-                        <span className="text-sm font-medium text-brand-400">
-                          {meta.badge}
-                        </span>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-xs font-medium text-brand-400">
+                            {meta.badge}
+                          </span>
+                          <span className="text-xs font-semibold text-slate-400 bg-surface-200/80 px-1.5 py-0.5 rounded">
+                            Peso: {Math.round((cat.peso || 0) * 100)}%
+                          </span>
+                        </div>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-right tabular-nums text-slate-300 font-medium text-sm">

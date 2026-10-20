@@ -49,9 +49,37 @@ TARGET_CATEGORIES = {
     336: "Panadería",
     347: "Congelados",
     359: "Limpieza",
-    402: "Perfumería y farmacia",
-    471: "Mascotas"
+    402: "Perfumería y farmacia"
 }
+
+# Ponderación de rubros según peso de consumo mensual familiar
+CATEGORY_WEIGHTS = {
+    "Carnes y pescados": 0.22,
+    "Almacén": 0.20,
+    "Lácteos y productos frescos": 0.15,
+    "Frutas y verduras": 0.10,
+    "Panadería": 0.08,
+    "Desayuno y merienda": 0.08,
+    "Bebidas": 0.06,
+    "Limpieza": 0.06,
+    "Perfumería y farmacia": 0.03,
+    "Congelados": 0.02
+}
+
+# Subcategorías no esenciales o de bazar/estacionales/cosmética a excluir
+EXCLUDED_SUBCATEGORIES = {
+    208,  # Golosinas y chocolates
+    706,  # Pascuas
+    525,  # Envases
+    329,  # Carbón y encendido
+    394,  # Artículos de limpieza (mopas, cestos automáticos)
+    427,  # Cuidado de la piel (dermocosmética avanzada)
+    445,  # Farmacia y ortopedia
+    514   # Perfumes y maquillaje
+}
+
+# Límite superior de precio unitario razonable para consumibles de supermercado
+MAX_PRODUCT_PRICE = 100000.0
 
 # Variable local por hilo para sesiones de requests (Thread-safe)
 thread_local = threading.local()
@@ -139,7 +167,10 @@ def discover_category_tasks(target_categories, use_subcategories=True):
                 children = cat_info.get("children", []) if cat_info else []
                 if children:
                     for child in children:
-                        path = f"{cat_id}/{child['id']}"
+                        child_id = child.get("id")
+                        if child_id in EXCLUDED_SUBCATEGORIES:
+                            continue
+                        path = f"{cat_id}/{child_id}"
                         tasks.append((path, cat_name, child.get("name", cat_name)))
                 else:
                     tasks.append((str(cat_id), cat_name, cat_name))
@@ -207,7 +238,7 @@ def fetch_products_for_task(category_path, parent_cat_name, task_name, limit=Non
                     for s in sellers:
                         sid = str(s.get("sellerId", "")).strip()
                         sname = str(s.get("sellerName", "")).strip().lower()
-                        if sid == "1" or "carrefour" in sname:
+                        if sid == "1" or sname == "carrefour":
                             carrefour_seller = s
                             break
 
@@ -216,6 +247,9 @@ def fetch_products_for_task(category_path, parent_cat_name, task_name, limit=Non
 
                     commertial_offer = carrefour_seller.get("commertialOffer")
                     if not commertial_offer:
+                        continue
+
+                    if not commertial_offer.get("IsAvailable", True):
                         continue
 
                     # Filtro estricto de stock: solo productos efectivamente disponibles para compra
@@ -232,8 +266,8 @@ def fetch_products_for_task(category_path, parent_cat_name, task_name, limit=Non
                         continue
 
                     price = float(raw_price)
-                    # Validar que el precio sea mayor a cero para evitar datos corruptos
-                    if price <= 0:
+                    # Validar precio dentro del rango razonable de canasta familiar
+                    if price <= 0 or price > MAX_PRODUCT_PRICE:
                         continue
 
                     if product_id and product_name:
@@ -334,6 +368,16 @@ def save_products_and_prices(conn, cursor, all_products_today):
         precios_data,
         page_size=1000
     )
+
+    # Desactivar productos que no forman parte del relevamiento actual de la Canasta Familiar
+    valid_ids = [p["id"] for p in all_products_today]
+    if valid_ids:
+        cursor.execute("""
+            UPDATE productos
+            SET activo = FALSE
+            WHERE activo = TRUE
+              AND (categoria NOT IN %s OR id NOT IN %s);
+        """, (tuple(TARGET_CATEGORIES.values()), tuple(valid_ids)))
 
     conn.commit()
 
@@ -483,39 +527,58 @@ def generate_and_send_report(conn, cursor, all_products_today, send_telegram_fla
                 "iguales": 0
             }
 
-        # Variación Día a Día (solo productos que ya existían previamente con precio > 0)
+        # Variación Día a Día (filtrando anomalías extremas por error de carga)
         if precio_a is not None and precio_a > 0:
             var_d = calcular_variacion(precio_h, precio_a)
-            variaciones_dia.append(var_d)
-            categorias_stats[cat]["variaciones_dia"].append(var_d)
+            if -50.0 <= var_d <= 100.0:
+                variaciones_dia.append(var_d)
+                categorias_stats[cat]["variaciones_dia"].append(var_d)
 
-            if var_d > 0:
-                subieron_dia += 1
-                categorias_stats[cat]["subieron"] += 1
-            elif var_d < 0:
-                bajaron_dia += 1
-                categorias_stats[cat]["bajaron"] += 1
-            else:
-                iguales_dia += 1
-                categorias_stats[cat]["iguales"] += 1
+                if var_d > 0:
+                    subieron_dia += 1
+                    categorias_stats[cat]["subieron"] += 1
+                elif var_d < 0:
+                    bajaron_dia += 1
+                    categorias_stats[cat]["bajaron"] += 1
+                else:
+                    iguales_dia += 1
+                    categorias_stats[cat]["iguales"] += 1
 
-        # Variación Acumulada del Mes en Curso
+        # Variación Acumulada del Mes en Curso (acotando saltos irreales de precio)
         if precio_m is not None and precio_m > 0:
             var_m = calcular_variacion(precio_h, precio_m)
-            variaciones_mes.append(var_m)
-            categorias_stats[cat]["variaciones_mes"].append(var_m)
+            if -60.0 <= var_m <= 150.0:
+                variaciones_mes.append(var_m)
+                categorias_stats[cat]["variaciones_mes"].append(var_m)
 
     # Formatear el reporte en HTML
     lineas = [f"📊 <b>Reporte Carrefour - {fecha_actual}</b>\n"]
 
-    # Canasta General (Promedio de variaciones porcentuales por producto)
-    var_dia_general = round(sum(variaciones_dia) / len(variaciones_dia), 2) if variaciones_dia else 0.0
-    var_mes_general = round(sum(variaciones_mes) / len(variaciones_mes), 2) if variaciones_mes else 0.0
+    # Canasta Familiar Ponderada (Ponderación estilo IPC sobre gasto de supermercado)
+    total_peso = sum(CATEGORY_WEIGHTS.get(c, 0.0) for c in categorias_stats.keys())
+    if total_peso > 0:
+        var_dia_general = round(
+            sum(
+                (sum(s["variaciones_dia"]) / len(s["variaciones_dia"]) if s["variaciones_dia"] else 0.0)
+                * CATEGORY_WEIGHTS.get(c, 0.0)
+                for c, s in categorias_stats.items()
+            ) / total_peso, 2
+        )
+        var_mes_general = round(
+            sum(
+                (sum(s["variaciones_mes"]) / len(s["variaciones_mes"]) if s["variaciones_mes"] else 0.0)
+                * CATEGORY_WEIGHTS.get(c, 0.0)
+                for c, s in categorias_stats.items()
+            ) / total_peso, 2
+        )
+    else:
+        var_dia_general = 0.0
+        var_mes_general = 0.0
 
     estado_dia = "📈" if var_dia_general > 0 else "📉" if var_dia_general < 0 else "➖"
     estado_mes = "📈" if var_mes_general > 0 else "📉" if var_mes_general < 0 else "➖"
 
-    lineas.append("🛒 <b>CANASTA SUPERMERCADO</b>")
+    lineas.append("🛒 <b>CANASTA FAMILIAR PONDERADA</b>")
     lineas.append(f"• Día: <b>{var_dia_general:+.2f}%</b> {estado_dia} (🔺{subieron_dia} 🔻{bajaron_dia} ➖{iguales_dia:,})")
     lineas.append(f"• Acumulado Mes ({nombre_mes}): <b>{var_mes_general:+.2f}%</b> {estado_mes}\n")
 
@@ -526,15 +589,16 @@ def generate_and_send_report(conn, cursor, all_products_today, send_telegram_fla
         key=lambda x: cat_order.index(x[0]) if x[0] in cat_order else 99
     )
 
-    lineas.append("📋 <b>Variación por Categoría:</b>")
+    lineas.append("📋 <b>Variación por Rubro (Ponderación IPC):</b>")
     for cat, stats in sorted_cats:
         v_cat_d = stats["variaciones_dia"]
         v_cat_m = stats["variaciones_mes"]
         var_cat_dia = round(sum(v_cat_d) / len(v_cat_d), 2) if v_cat_d else 0.0
         var_cat_mes = round(sum(v_cat_m) / len(v_cat_m), 2) if v_cat_m else 0.0
+        peso_pct = int(CATEGORY_WEIGHTS.get(cat, 0.0) * 100)
 
         estado_cat = "🔴" if var_cat_dia > 0 else "🟢" if var_cat_dia < 0 else "⚪"
-        lineas.append(f"🏷️ <b>{html.escape(cat)}</b>: {var_cat_dia:+.2f}% {estado_cat} (Mes: {var_cat_mes:+.2f}%)")
+        lineas.append(f"🏷️ <b>{html.escape(cat)}</b> ({peso_pct}%): {var_cat_dia:+.2f}% {estado_cat} (Mes: {var_cat_mes:+.2f}%)")
 
     informe = "\n".join(lineas)
 

@@ -1,6 +1,21 @@
 import { sql } from "./db";
 import { DashboardData, ProductSearchResult, PricePoint, CategoryStat, ProductMover } from "./types";
 
+export const CATEGORY_WEIGHTS: Record<string, number> = {
+  "Carnes y pescados": 0.22,
+  "Almacén": 0.20,
+  "Lácteos y productos frescos": 0.15,
+  "Frutas y verduras": 0.10,
+  "Panadería": 0.08,
+  "Desayuno y merienda": 0.08,
+  "Bebidas": 0.06,
+  "Limpieza": 0.06,
+  "Perfumería y farmacia": 0.03,
+  "Congelados": 0.02,
+};
+
+const VALID_CATEGORIES = Object.keys(CATEGORY_WEIGHTS);
+
 export async function getDashboardData(): Promise<DashboardData> {
   // Obtener fechas clave de análisis
   const fechasResult = await sql`
@@ -24,36 +39,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     f_mes: "",
   };
 
-  // Resumen general de la canasta
-  const statsResult = await sql`
-    WITH precios AS (
-      SELECT 
-        p.id,
-        h_hoy.precio AS precio_hoy,
-        h_ayer.precio AS precio_ayer,
-        h_mes.precio AS precio_mes,
-        ROUND(((h_hoy.precio - h_ayer.precio) / h_ayer.precio) * 100, 2) AS var_dia,
-        ROUND(((h_hoy.precio - h_mes.precio) / h_mes.precio) * 100, 2) AS var_mes
-      FROM productos p
-      JOIN historial_precios h_hoy ON h_hoy.producto_id = p.id AND h_hoy.fecha = ${f_hoy}::date
-      LEFT JOIN historial_precios h_ayer ON h_ayer.producto_id = p.id AND h_ayer.fecha = ${f_ayer}::date
-      LEFT JOIN historial_precios h_mes ON h_mes.producto_id = p.id AND h_mes.fecha = ${f_mes}::date
-      WHERE p.activo = TRUE AND h_hoy.precio > 0
-    )
-    SELECT 
-      COUNT(*)::int AS total_monitoreados,
-      COUNT(var_dia)::int AS con_var_dia,
-      COALESCE(ROUND(AVG(var_dia), 2), 0.00)::float AS avg_var_dia,
-      COALESCE(ROUND(AVG(var_mes), 2), 0.00)::float AS avg_var_mes,
-      COUNT(CASE WHEN var_dia > 0 THEN 1 END)::int AS subieron,
-      COUNT(CASE WHEN var_dia < 0 THEN 1 END)::int AS bajaron,
-      COUNT(CASE WHEN var_dia = 0 THEN 1 END)::int AS iguales
-    FROM precios;
-  `;
-
-  const s = statsResult[0] || {};
-
-  // Resumen por categorías
+  // Resumen por rubros auditados (con filtrado estadístico de outliers de carga)
   const categoriasResult = await sql`
     WITH precios AS (
       SELECT 
@@ -67,22 +53,52 @@ export async function getDashboardData(): Promise<DashboardData> {
       JOIN historial_precios h_hoy ON h_hoy.producto_id = p.id AND h_hoy.fecha = ${f_hoy}::date
       LEFT JOIN historial_precios h_ayer ON h_ayer.producto_id = p.id AND h_ayer.fecha = ${f_ayer}::date
       LEFT JOIN historial_precios h_mes ON h_mes.producto_id = p.id AND h_mes.fecha = ${f_mes}::date
-      WHERE p.activo = TRUE AND h_hoy.precio > 0 AND p.categoria IS NOT NULL
+      WHERE p.activo = TRUE 
+        AND h_hoy.precio > 0 
+        AND h_hoy.precio <= 100000
+        AND p.categoria = ANY(${VALID_CATEGORIES})
     )
     SELECT 
       categoria,
       COUNT(*)::int AS total_productos,
-      COALESCE(ROUND(AVG(var_dia), 2), 0.00)::float AS var_dia,
-      COALESCE(ROUND(AVG(var_mes), 2), 0.00)::float AS var_mes,
-      COUNT(CASE WHEN var_dia > 0 THEN 1 END)::int AS subieron,
-      COUNT(CASE WHEN var_dia < 0 THEN 1 END)::int AS bajaron,
+      COALESCE(ROUND(AVG(var_dia) FILTER (WHERE var_dia BETWEEN -50 AND 100), 2), 0.00)::float AS var_dia,
+      COALESCE(ROUND(AVG(var_mes) FILTER (WHERE var_mes BETWEEN -60 AND 150), 2), 0.00)::float AS var_mes,
+      COUNT(CASE WHEN var_dia > 0 AND var_dia <= 100 THEN 1 END)::int AS subieron,
+      COUNT(CASE WHEN var_dia < 0 AND var_dia >= -50 THEN 1 END)::int AS bajaron,
       COUNT(CASE WHEN var_dia = 0 THEN 1 END)::int AS iguales
     FROM precios
-    GROUP BY categoria
-    ORDER BY var_mes DESC;
+    GROUP BY categoria;
   `;
 
-  // Mayores aumentos del día
+  const categoriasParsed: CategoryStat[] = (categoriasResult || []).map((row: any) => {
+    const catName = String(row.categoria || "");
+    return {
+      categoria: catName,
+      peso: CATEGORY_WEIGHTS[catName] || 0.0,
+      totalProductos: Number(row.total_productos || 0),
+      varDia: Number(row.var_dia || 0),
+      varMes: Number(row.var_mes || 0),
+      subieron: Number(row.subieron || 0),
+      bajaron: Number(row.bajaron || 0),
+      iguales: Number(row.iguales || 0),
+    };
+  });
+
+  // Cálculo ponderado general (Canasta Familiar estilo IPC)
+  const totalPeso = categoriasParsed.reduce((acc, c) => acc + (c.peso || 0), 0) || 1.0;
+  const varDiaPonderada = Number((
+    categoriasParsed.reduce((acc, c) => acc + c.varDia * c.peso, 0) / totalPeso
+  ).toFixed(2));
+  const varMesPonderada = Number((
+    categoriasParsed.reduce((acc, c) => acc + c.varMes * c.peso, 0) / totalPeso
+  ).toFixed(2));
+
+  const totalMonitoreados = categoriasParsed.reduce((acc, c) => acc + c.totalProductos, 0);
+  const subieronTotal = categoriasParsed.reduce((acc, c) => acc + c.subieron, 0);
+  const bajaronTotal = categoriasParsed.reduce((acc, c) => acc + c.bajaron, 0);
+  const igualesTotal = categoriasParsed.reduce((acc, c) => acc + c.iguales, 0);
+
+  // Mayores aumentos del día (filtrando errores de carga > 100%)
   const subasResult = await sql`
     SELECT 
       p.id,
@@ -97,13 +113,16 @@ export async function getDashboardData(): Promise<DashboardData> {
     JOIN historial_precios h_ayer ON h_ayer.producto_id = p.id AND h_ayer.fecha = ${f_ayer}::date
     WHERE p.activo = TRUE 
       AND h_hoy.precio > 0 
+      AND h_hoy.precio <= 100000
       AND h_ayer.precio > 0
       AND h_hoy.precio > h_ayer.precio
+      AND ((h_hoy.precio - h_ayer.precio) / h_ayer.precio) * 100 <= 100
+      AND p.categoria = ANY(${VALID_CATEGORIES})
     ORDER BY var_dia DESC
     LIMIT 6;
   `;
 
-  // Mayores bajas / ofertas del día
+  // Mayores bajas / ofertas del día (filtrando caídas irreales > -50%)
   const bajasResult = await sql`
     SELECT 
       p.id,
@@ -118,8 +137,11 @@ export async function getDashboardData(): Promise<DashboardData> {
     JOIN historial_precios h_ayer ON h_ayer.producto_id = p.id AND h_ayer.fecha = ${f_ayer}::date
     WHERE p.activo = TRUE 
       AND h_hoy.precio > 0 
+      AND h_hoy.precio <= 100000
       AND h_ayer.precio > 0
       AND h_hoy.precio < h_ayer.precio
+      AND ((h_hoy.precio - h_ayer.precio) / h_ayer.precio) * 100 >= -50
+      AND p.categoria = ANY(${VALID_CATEGORIES})
     ORDER BY var_dia ASC
     LIMIT 6;
   `;
@@ -129,23 +151,15 @@ export async function getDashboardData(): Promise<DashboardData> {
       fechaHoy: f_hoy,
       fechaAyer: f_ayer,
       fechaMes: f_mes,
-      totalMonitoreados: Number(s.total_monitoreados || 0),
-      conVarDia: Number(s.con_var_dia || 0),
-      varDiaGeneral: Number(s.avg_var_dia || 0),
-      varMesGeneral: Number(s.avg_var_mes || 0),
-      subieronDia: Number(s.subieron || 0),
-      bajaronDia: Number(s.bajaron || 0),
-      igualesDia: Number(s.iguales || 0),
+      totalMonitoreados,
+      conVarDia: subieronTotal + bajaronTotal + igualesTotal,
+      varDiaGeneral: varDiaPonderada,
+      varMesGeneral: varMesPonderada,
+      subieronDia: subieronTotal,
+      bajaronDia: bajaronTotal,
+      igualesDia: igualesTotal,
     },
-    categorias: (categoriasResult || []).map((row: any) => ({
-      categoria: String(row.categoria || ""),
-      totalProductos: Number(row.total_productos || 0),
-      varDia: Number(row.var_dia || 0),
-      varMes: Number(row.var_mes || 0),
-      subieron: Number(row.subieron || 0),
-      bajaron: Number(row.bajaron || 0),
-      iguales: Number(row.iguales || 0),
-    })),
+    categorias: categoriasParsed.sort((a, b) => b.varMes - a.varMes),
     topSubas: (subasResult || []).map((row: any) => ({
       id: String(row.id),
       nombre: String(row.nombre || ""),

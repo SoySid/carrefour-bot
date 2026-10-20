@@ -14,6 +14,7 @@ export interface DailyStats {
 export interface CategoryStat {
   categoria: string;
   totalProductos: number;
+  peso: number;
   varDia: number;
   varMes: number;
   subieron: number;
