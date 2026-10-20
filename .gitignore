@@ -24,3 +24,5 @@ web/.next/
 web/.env*.local
 /.taste-skill/
 /assets/
+.vercel
+.env*

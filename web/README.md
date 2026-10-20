@@ -1,14 +1,15 @@
-# Carrefour Monitor - Portal Web
+# Carrefour Monitor Web
 
-Plataforma pública interactiva construida con **Next.js 14 (App Router)**, **Tailwind CSS** y **Neon PostgreSQL** para consultar en tiempo real el índice de precios, la inflación acumulada de la canasta de supermercado y la evolución histórica de productos en Carrefour Argentina.
+Portal web para consultar el índice de precios de la Canasta Familiar en Carrefour Argentina y visualizar la evolución histórica de productos de supermercado.
 
-## Características
+Producción: [https://carrefour-bot-web.vercel.app](https://carrefour-bot-web.vercel.app)
 
-- **Índice en Vivo**: Variación porcentual del día y acumulada del mes en curso, con desglose de artículos que subieron, bajaron o mantuvieron precio.
-- **Buscador de Catálogo con Historial**: Búsqueda instantánea con series temporales y trazado de curvas históricas de precios mediante SVG interactivo nativo.
-- **Termómetro por Categorías**: Monitoreo de 12 rubros con adaptación responsive (grilla en escritorio y carrusel snap horizontal en móvil).
-- **Top Movimientos**: Mayores aumentos y mejores ofertas detectadas en el último corte matutino.
-- **Cero Fricción con la Base de Datos**: Integración con `@neondatabase/serverless` e ISR (Incremental Static Regeneration cada 1 hora) para máxima velocidad de respuesta sin agotar conexiones.
+## Funcionalidades
+
+- Resumen del día y acumulado del mes con ponderación por rubro según gasto de hogar.
+- Tabla comparativa de los 10 rubros con detalle de artículos que subieron, bajaron o mantuvieron precio.
+- Buscador de productos con gráfico interactivo de precios de los últimos 60 días.
+- Mayores aumentos y bajas registradas en la última jornada.
 
 ## Desarrollo Local
 
@@ -18,14 +19,13 @@ npm install
 npm run dev
 ```
 
-La aplicación estará disponible en `http://localhost:3000`.
+El servidor local corre en `http://localhost:3000`.
 
-## Despliegue en Vercel
+## Despliegue
 
-1. Importar el repositorio en [Vercel](https://vercel.com).
-2. En la configuración del proyecto:
-   - **Root Directory**: `web`
-   - **Framework Preset**: `Next.js`
-3. En la sección **Environment Variables**:
-   - `DATABASE_URL`: Pegar la cadena de conexión de Neon (`postgresql://...`).
-4. Presionar **Deploy**.
+El frontend se despliega automáticamente en Vercel con cada commit en la rama `main`. Para compilar y desplegar manualmente desde la consola:
+
+```bash
+# Desde la raíz del repositorio
+vercel --prod
+```
