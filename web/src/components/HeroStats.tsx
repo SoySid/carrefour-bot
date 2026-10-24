@@ -47,43 +47,65 @@ export function HeroStats({ stats, changuito = [] }: HeroStatsProps) {
       </div>
 
       {/* Tablero de Góndola */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Columna Izquierda: Variación General y Dispersión */}
-        <div className="lg:col-span-7 rounded-xl bg-surface-100 border border-surface-border p-5 sm:p-6 flex flex-col justify-between space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+        {/* Columna Izquierda: Variación General y Actividad */}
+        <div className="lg:col-span-7 rounded-xl bg-surface-100 border border-surface-border p-5 sm:p-6 flex flex-col justify-between gap-6">
+          {/* Bloque Superior: Las dos métricas de inflación */}
           <div>
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
               Variación ponderada por rubro
             </span>
-            <div className="mt-3 flex flex-wrap items-baseline gap-4">
-              <span
-                className={`text-5xl sm:text-6xl font-extrabold font-mono tracking-tight tabular-nums ${
-                  isDayPositive
-                    ? "text-rose-400"
-                    : isDayNegative
-                    ? "text-emerald-400"
-                    : "text-slate-100"
-                }`}
-              >
-                {stats.varDiaGeneral > 0 ? `+${stats.varDiaGeneral.toFixed(2)}%` : `${stats.varDiaGeneral.toFixed(2)}%`}
-              </span>
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold text-slate-200">
-                  {isDayPositive ? "Promedio de suba en 24h" : isDayNegative ? "Promedio de baja en 24h" : "Sin variación neta"}
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4 border-b border-surface-border/60 pb-5">
+              <div>
+                <span
+                  className={`text-4xl sm:text-5xl font-extrabold font-mono tracking-tight tabular-nums block ${
+                    isDayPositive
+                      ? "text-rose-400"
+                      : isDayNegative
+                      ? "text-emerald-400"
+                      : "text-slate-100"
+                  }`}
+                >
+                  {stats.varDiaGeneral > 0 ? `+${stats.varDiaGeneral.toFixed(2)}%` : `${stats.varDiaGeneral.toFixed(2)}%`}
                 </span>
-                <span className="text-xs text-slate-400 font-mono tabular-nums">
-                  Acumulado este mes:{" "}
-                  <strong className={stats.varMesGeneral >= 0 ? "text-rose-400 font-semibold" : "text-emerald-400 font-semibold"}>
-                    {stats.varMesGeneral > 0 ? `+${stats.varMesGeneral.toFixed(2)}%` : `${stats.varMesGeneral.toFixed(2)}%`}
-                  </strong>
+                <span className="text-xs text-slate-300 font-medium block mt-1">
+                  {isDayPositive ? "Suba promedio en 24h" : isDayNegative ? "Baja promedio en 24h" : "Sin variación neta"}
+                </span>
+              </div>
+
+              <div className="sm:border-l sm:border-surface-border/60 sm:pl-4">
+                <span
+                  className={`text-4xl sm:text-5xl font-extrabold font-mono tracking-tight tabular-nums block ${
+                    stats.varMesGeneral > 0
+                      ? "text-rose-400"
+                      : stats.varMesGeneral < 0
+                      ? "text-emerald-400"
+                      : "text-slate-100"
+                  }`}
+                >
+                  {stats.varMesGeneral > 0 ? `+${stats.varMesGeneral.toFixed(2)}%` : `${stats.varMesGeneral.toFixed(2)}%`}
+                </span>
+                <span className="text-xs text-slate-300 font-medium block mt-1">
+                  Acumulado este mes
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Barra de Dispersión sin subcajas anidadas */}
+          {/* Bloque Medio: Resumen de actividad en góndola */}
+          <div className="space-y-1.5 py-1">
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+              Estado de la góndola hoy
+            </span>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              El <strong className="text-slate-100 font-mono">{pctCongelados.toFixed(1)}%</strong> de los artículos ({stats.igualesDia.toLocaleString("es-AR")} productos) mantuvo su precio sin cambios. Solo el <strong className="text-slate-100 font-mono">{(pctSubieron + pctBajaron).toFixed(1)}%</strong> ({stats.conVarDia.toLocaleString("es-AR")} artículos) registró movimientos en el corte diario.
+            </p>
+          </div>
+
+          {/* Bloque Inferior: Termómetro de Dispersión */}
           <div className="space-y-2.5 pt-4 border-t border-surface-border/60">
             <div className="flex items-center justify-between text-xs text-slate-300">
-              <span className="font-semibold text-slate-400">Movimiento de precios hoy</span>
+              <span className="font-semibold text-slate-400">Distribución de variaciones</span>
               <span className="font-mono text-slate-400 tabular-nums">
                 {stats.totalMonitoreados.toLocaleString("es-AR")} artículos relevados
               </span>
@@ -107,7 +129,7 @@ export function HeroStats({ stats, changuito = [] }: HeroStatsProps) {
               />
             </div>
 
-            {/* Fila limpia de datos directos, sin cajas adentro */}
+            {/* Fila limpia de datos directos */}
             <div className="flex flex-wrap items-center justify-between gap-2 pt-1 font-mono text-xs tabular-nums text-slate-300">
               <div className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-rose-500" />

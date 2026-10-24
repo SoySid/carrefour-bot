@@ -41,7 +41,7 @@ export default async function HomePage() {
     <div className="min-h-[100dvh] flex flex-col bg-surface-50 text-slate-100 bg-dot-grid relative selection:bg-brand-500/30 selection:text-white">
       <Header fechaHoy={data.stats.fechaHoy} />
 
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 sm:px-6 space-y-12 sm:space-y-16 py-4">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 sm:px-6 space-y-12 sm:space-y-16 pt-6 sm:pt-8 pb-12">
         <HeroStats stats={data.stats} changuito={data.changuito} />
         <ProductSearch />
         <CategoryBreakdown categorias={data.categorias} />
