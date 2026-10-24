@@ -16,12 +16,13 @@ export const CATEGORY_WEIGHTS: Record<string, number> = {
 
 const VALID_CATEGORIES = Object.keys(CATEGORY_WEIGHTS);
 
-let cachedDashboard: { data: DashboardData; timestamp: number } | null = null;
+let cachedDashboard: { data: DashboardData; timestamp: number; key: string } | null = null;
 const CACHE_TTL_MS = 1000 * 60 * 15; // 15 minutos en memoria
+const CURRENT_CACHE_KEY = "brands_option_a_v1";
 
 export async function getDashboardData(): Promise<DashboardData> {
   const now = Date.now();
-  if (cachedDashboard && now - cachedDashboard.timestamp < CACHE_TTL_MS) {
+  if (cachedDashboard && cachedDashboard.key === CURRENT_CACHE_KEY && now - cachedDashboard.timestamp < CACHE_TTL_MS) {
     return cachedDashboard.data;
   }
 
@@ -150,8 +151,8 @@ export async function getDashboardData(): Promise<DashboardData> {
     LIMIT 6;
   `;
 
-  // Canasta Testigo: 6 alimentos básicos representativos (leche, aceite, arroz, fideos, harina y yerba)
-  const STAPLE_IDS = ['720021', '757629', '673599', '744474', '605381', '708486'];
+  // Canasta Básica de Primeras Marcas: La Serenísima, Natura, Matarazzo, Gallo Oro, Pureza y Taragüí
+  const STAPLE_IDS = ['720719', '332888', '726304', '733186', '551284', '668369'];
   const changuitoResult = await sql`
     SELECT 
       p.id,
@@ -164,7 +165,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     FROM productos p
     JOIN historial_precios h_hoy ON h_hoy.producto_id = p.id AND h_hoy.fecha = ${f_hoy}::date
     LEFT JOIN historial_precios h_ayer ON h_ayer.producto_id = p.id AND h_ayer.fecha = ${f_ayer}::date
-    WHERE p.id = ANY(${STAPLE_IDS})
+    WHERE p.id::text = ANY(${STAPLE_IDS})
     ORDER BY p.categoria ASC;
   `;
 
@@ -214,6 +215,7 @@ export async function getDashboardData(): Promise<DashboardData> {
   cachedDashboard = {
     data: dashboardPayload,
     timestamp: now,
+    key: CURRENT_CACHE_KEY,
   };
 
   return dashboardPayload;
