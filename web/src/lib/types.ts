@@ -32,11 +32,22 @@ export interface ProductMover {
   varDia: number;
 }
 
+export interface ChanguitoItem {
+  id: string;
+  nombre: string;
+  categoria: string;
+  url: string;
+  precioHoy: number;
+  precioAyer: number;
+  varDia: number;
+}
+
 export interface DashboardData {
   stats: DailyStats;
   categorias: CategoryStat[];
   topSubas: ProductMover[];
   topBajas: ProductMover[];
+  changuito?: ChanguitoItem[];
 }
 
 export interface ProductSearchResult {

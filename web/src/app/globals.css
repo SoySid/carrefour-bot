@@ -3,18 +3,34 @@
 @tailwind utilities;
 
 :root {
-  --background: #000000;
-  --foreground: #ffffff;
+  --background: #0b0f17;
+  --foreground: #f1f5f9;
+}
+
+html {
+  color-scheme: dark;
 }
 
 body {
-  color: #ffffff;
-  background-color: #000000;
+  color: #f1f5f9;
+  background-color: #0b0f17;
   font-size: 16px;
   line-height: 1.5;
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum";
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Evitar zoom automático en iOS en inputs */
+input, select, textarea, button {
+  font-size: 16px;
+  touch-action: manipulation;
+}
+
+.bg-dot-grid {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
 .delay-75 { animation-delay: 75ms; }

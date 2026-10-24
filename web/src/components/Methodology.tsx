@@ -1,53 +1,62 @@
 import React from "react";
+import { ShieldCheck, Scale, Database, Clock } from "lucide-react";
 
 export function Methodology() {
-  const points = [
+  const criteria = [
     {
-      title: "Canasta Familiar Ponderada (IPC)",
-      desc: "El índice general pondera el impacto de cada departamento según la estructura de consumo familiar (ej. Carnes 22%, Almacén 20%, Lácteos 15%), evitando que rubros con exceso de artículos desvíen la medición.",
+      icon: Scale,
+      title: "Ponderación por gasto del hogar",
+      desc: "El índice general pondera cada rubro según la estructura de consumo familiar (Carnes 22%, Almacén 20%, Lácteos 15%), impidiendo que categorías con miles de artículos secundarios distorsionen el resultado.",
     },
     {
-      title: "Filtro riguroso anti-outliers",
-      desc: "Exclusión de subcategorías no esenciales (mopas, cestos automáticos, ortopedia, maquillaje) y acotación estadística de variaciones extremas causadas por errores de carga en góndola.",
+      icon: ShieldCheck,
+      title: "Filtrado de anomalías y outliers",
+      desc: "Se excluyen errores evidentes de carga de góndola (subas superiores al 100% o caídas mayores al 50% en 24h) y artículos que no pertenecen al consumo esencial.",
     },
     {
-      title: "Stock real y venta directa Carrefour",
-      desc: "Solo se computan productos con stock positivo disponible y vendidos directamente por Carrefour (sellerId=1), excluyendo publicaciones de terceros y precios placeholder de marketplace.",
+      icon: Database,
+      title: "Stock activo y venta directa",
+      desc: "Solo se computan artículos con stock disponible despachados directamente por Carrefour, descartando publicaciones sin disponibilidad y vendedores externos del marketplace.",
     },
     {
-      title: "Pipeline matutino automatizado",
-      desc: "El relevamiento se ejecuta diariamente a las 08:35 ART mediante GitHub Actions y persiste el histórico en Neon PostgreSQL con sincronización de estado activo.",
+      icon: Clock,
+      title: "Corte diario matutino",
+      desc: "El barrido se ejecuta todas las mañanas de forma automatizada mediante GitHub Actions y persiste el histórico en Neon PostgreSQL para trazabilidad temporal.",
     },
   ];
 
   return (
-    <section id="metodologia" className="space-y-6 pt-6 sm:pt-8 animate-enter delay-150">
-      <div className="rounded-2xl bg-surface-100 border border-surface-200 p-6 sm:p-8 lg:p-10 space-y-8">
-        <div className="max-w-3xl space-y-2">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-            Metodología y criterios de relevamiento
+    <section className="space-y-4 pt-4 sm:pt-6">
+      <div className="rounded-xl bg-surface-100 border border-surface-border p-5 sm:p-7 space-y-6">
+        <div className="max-w-2xl space-y-1">
+          <h2 className="text-lg sm:text-xl font-bold tracking-tight text-slate-100">
+            Criterios Técnicos y Metodología
           </h2>
-          <p className="text-base text-slate-300 leading-relaxed max-w-prose">
-            Criterios técnicos aplicados en cada ejecución diaria para asegurar consistencia y trazabilidad en los datos.
+          <p className="text-xs sm:text-sm text-slate-400">
+            Reglas de consistencia aplicadas en cada relevamiento para asegurar trazabilidad.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10">
-          {points.map((p, idx) => (
-            <div
-              key={idx}
-              className={`space-y-2 border-l-2 border-brand-500 pl-4 animate-enter ${
-                idx === 0 ? "delay-150" : idx === 1 ? "delay-225" : idx === 2 ? "delay-300" : "delay-375"
-              }`}
-            >
-              <h3 className="text-base font-bold text-white">
-                {p.title}
-              </h3>
-              <p className="text-sm text-slate-300 leading-relaxed max-w-prose">
-                {p.desc}
-              </p>
-            </div>
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {criteria.map((c, idx) => {
+            const Icon = c.icon;
+            return (
+              <div
+                key={idx}
+                className="space-y-2 rounded-lg bg-surface-200/40 p-3.5 border border-surface-border/60"
+              >
+                <div className="flex items-center gap-2 text-brand-400">
+                  <Icon className="h-4 w-4" />
+                  <h3 className="text-xs font-bold text-slate-200">
+                    {c.title}
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  {c.desc}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>

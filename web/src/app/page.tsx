@@ -38,29 +38,27 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="min-h-[100dvh] flex flex-col overflow-x-hidden bg-surface-50 text-slate-100">
+    <div className="min-h-[100dvh] flex flex-col bg-surface-50 text-slate-100 bg-dot-grid relative selection:bg-brand-500/30 selection:text-white">
       <Header fechaHoy={data.stats.fechaHoy} />
 
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 sm:px-6 space-y-12 sm:space-y-16 overflow-hidden">
-        <HeroStats stats={data.stats} />
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 sm:px-6 space-y-12 sm:space-y-16 py-4">
+        <HeroStats stats={data.stats} changuito={data.changuito} />
         <ProductSearch />
         <CategoryBreakdown categorias={data.categorias} />
         <TopMovers topSubas={data.topSubas} topBajas={data.topBajas} />
         <Methodology />
       </main>
 
-      <footer data-ui="true" className="mt-20 bg-surface-100 py-12 text-sm text-slate-400">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 space-y-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p>© {new Date().getFullYear()} Carrefour Tracker. Datos públicos relevados para seguimiento de precios.</p>
-            <div className="flex items-center gap-6 text-slate-400">
-              <a href="https://github.com/sidarg/carrefour-bot" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors font-medium">
-                GitHub
-              </a>
-              <a href="https://t.me/carrefour_monitor_bot" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors font-medium">
-                Canal Telegram
-              </a>
-            </div>
+      <footer className="mt-20 border-t border-surface-border bg-surface-100 py-10 text-xs text-slate-400">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p>© {new Date().getFullYear()} Carrefour Tracker. Relevamiento técnico independiente sobre góndola digital.</p>
+          <div className="flex items-center gap-6">
+            <a href="https://github.com/sidarg/carrefour-bot" target="_blank" rel="noopener noreferrer" className="hover:text-slate-200 transition-colors">
+              Repositorio GitHub
+            </a>
+            <a href="https://t.me/carrefour_monitor_bot" target="_blank" rel="noopener noreferrer" className="hover:text-slate-200 transition-colors">
+              Bot en Telegram
+            </a>
           </div>
         </div>
       </footer>

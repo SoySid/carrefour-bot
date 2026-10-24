@@ -1,5 +1,5 @@
 import { sql } from "./db";
-import { DashboardData, ProductSearchResult, PricePoint, CategoryStat, ProductMover } from "./types";
+import { DashboardData, ProductSearchResult, PricePoint, CategoryStat, ProductMover, ChanguitoItem } from "./types";
 
 export const CATEGORY_WEIGHTS: Record<string, number> = {
   "Carnes y pescados": 0.22,
@@ -16,28 +16,32 @@ export const CATEGORY_WEIGHTS: Record<string, number> = {
 
 const VALID_CATEGORIES = Object.keys(CATEGORY_WEIGHTS);
 
+let cachedDashboard: { data: DashboardData; timestamp: number } | null = null;
+const CACHE_TTL_MS = 1000 * 60 * 15; // 15 minutos en memoria
+
 export async function getDashboardData(): Promise<DashboardData> {
-  // Obtener fechas clave de análisis
+  const now = Date.now();
+  if (cachedDashboard && now - cachedDashboard.timestamp < CACHE_TTL_MS) {
+    return cachedDashboard.data;
+  }
+
+  // Obtener fechas clave de análisis buscando fechas únicas recientes
   const fechasResult = await sql`
-    WITH fechas AS (
-      SELECT 
-        MAX(fecha) AS f_hoy,
-        (SELECT MAX(fecha) FROM historial_precios WHERE fecha < (SELECT MAX(fecha) FROM historial_precios)) AS f_ayer,
-        (SELECT MIN(fecha) FROM historial_precios WHERE fecha >= DATE_TRUNC('month', (SELECT MAX(fecha) FROM historial_precios))) AS f_mes
-      FROM historial_precios
-    )
-    SELECT 
-      TO_CHAR(f_hoy, 'YYYY-MM-DD') AS f_hoy,
-      TO_CHAR(f_ayer, 'YYYY-MM-DD') AS f_ayer,
-      TO_CHAR(f_mes, 'YYYY-MM-DD') AS f_mes
-    FROM fechas;
+    SELECT TO_CHAR(fecha, 'YYYY-MM-DD') AS f
+    FROM historial_precios
+    GROUP BY fecha
+    ORDER BY fecha DESC
+    LIMIT 35;
   `;
 
-  const { f_hoy, f_ayer, f_mes } = fechasResult[0] || {
-    f_hoy: new Date().toISOString().split("T")[0],
-    f_ayer: "",
-    f_mes: "",
-  };
+  const availableDates: string[] = (fechasResult || []).map((r: any) => String(r.f));
+  const f_hoy = availableDates[0] || new Date().toISOString().split("T")[0];
+  const f_ayer = availableDates[1] || "";
+  
+  // Buscar fecha al inicio del mes corriente
+  const currentMonthPrefix = f_hoy.substring(0, 7);
+  const monthDates = availableDates.filter((d) => d.startsWith(currentMonthPrefix));
+  const f_mes = monthDates.length > 0 ? monthDates[monthDates.length - 1] : f_ayer;
 
   // Resumen por rubros auditados (con filtrado estadístico de outliers de carga)
   const categoriasResult = await sql`
@@ -146,7 +150,36 @@ export async function getDashboardData(): Promise<DashboardData> {
     LIMIT 6;
   `;
 
-  return {
+  // Canasta Testigo: 6 artículos esenciales de consumo masivo
+  const changuitoResult = await sql`
+    SELECT 
+      p.id,
+      p.nombre,
+      p.categoria,
+      p.url,
+      h_hoy.precio::float AS precio_hoy,
+      h_ayer.precio::float AS precio_ayer,
+      ROUND(((h_hoy.precio - h_ayer.precio) / h_ayer.precio) * 100, 2)::float AS var_dia
+    FROM productos p
+    JOIN historial_precios h_hoy ON h_hoy.producto_id = p.id AND h_hoy.fecha = ${f_hoy}::date
+    JOIN historial_precios h_ayer ON h_ayer.producto_id = p.id AND h_ayer.fecha = ${f_ayer}::date
+    WHERE p.activo = TRUE 
+      AND h_hoy.precio > 500 
+      AND h_hoy.precio <= 25000
+      AND h_ayer.precio > 0
+      AND (
+        p.nombre ILIKE '%leche%' 
+        OR p.nombre ILIKE '%aceite%' 
+        OR p.nombre ILIKE '%fideos%' 
+        OR p.nombre ILIKE '%arroz%' 
+        OR p.nombre ILIKE '%yerba%' 
+        OR p.nombre ILIKE '%harina%'
+      )
+    ORDER BY p.nombre ASC
+    LIMIT 6;
+  `;
+
+  const dashboardPayload: DashboardData = {
     stats: {
       fechaHoy: f_hoy,
       fechaAyer: f_ayer,
@@ -178,7 +211,23 @@ export async function getDashboardData(): Promise<DashboardData> {
       precioAyer: Number(row.precio_ayer || 0),
       varDia: Number(row.var_dia || 0),
     })),
+    changuito: (changuitoResult || []).map((row: any) => ({
+      id: String(row.id),
+      nombre: String(row.nombre || ""),
+      categoria: String(row.categoria || ""),
+      url: String(row.url || ""),
+      precioHoy: Number(row.precio_hoy || 0),
+      precioAyer: Number(row.precio_ayer || 0),
+      varDia: Number(row.var_dia || 0),
+    })),
   };
+
+  cachedDashboard = {
+    data: dashboardPayload,
+    timestamp: now,
+  };
+
+  return dashboardPayload;
 }
 
 let cachedDates: { f_hoy: string; f_ayer: string; timestamp: number } | null = null;
