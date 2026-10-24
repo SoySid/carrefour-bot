@@ -1,5 +1,5 @@
 import React from "react";
-import { ArrowUpRight, ArrowDownRight, Minus, ShoppingBasket, Activity } from "lucide-react";
+import { ShoppingBasket, Activity } from "lucide-react";
 import { DailyStats, ChanguitoItem } from "@/lib/types";
 
 interface HeroStatsProps {
@@ -31,32 +31,32 @@ export function HeroStats({ stats, changuito = [] }: HeroStatsProps) {
     : "0.0";
 
   return (
-    <section className="space-y-6 pt-4 sm:pt-8">
-      {/* Encabezado Editorial */}
-      <div className="flex flex-col gap-2 max-w-3xl">
-        <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-          <Activity className="h-3.5 w-3.5 text-brand-400" />
-          <span>Monitor de Góndola y Canasta Familiar</span>
+    <section className="space-y-6 pt-2 sm:pt-6">
+      {/* Encabezado */}
+      <div className="flex flex-col gap-1.5 max-w-3xl">
+        <div className="inline-flex items-center gap-2 text-xs font-semibold text-brand-400">
+          <Activity className="h-3.5 w-3.5" />
+          <span>Monitor diario de góndola</span>
         </div>
-        <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-100 text-balance">
-          Precios al Consumidor en Carrefour
+        <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-100 text-balance">
+          Precios al consumidor en Carrefour
         </h1>
         <p className="text-sm sm:text-base text-slate-300 max-w-2xl text-balance">
-          Medición diaria e independiente calculada sobre artículos de consumo masivo con stock activo en Carrefour Argentina.
+          Relevamiento diario de precios para productos con stock real en la tienda online.
         </p>
       </div>
 
-      {/* Bloque Asimétrico: Tablero Central */}
+      {/* Tablero de Góndola */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Columna Izquierda: Indicadores de Inflación (7 columnas) */}
-        <div className="lg:col-span-7 flex flex-col justify-between rounded-xl bg-surface-100 border border-surface-border p-5 sm:p-7 space-y-6">
+        {/* Columna Izquierda: Variación General y Dispersión */}
+        <div className="lg:col-span-7 rounded-xl bg-surface-100 border border-surface-border p-5 sm:p-6 flex flex-col justify-between space-y-6">
           <div>
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
-              Variación de la Canasta (Ponderación estilo IPC)
+              Variación ponderada por rubro
             </span>
             <div className="mt-3 flex flex-wrap items-baseline gap-4">
               <span
-                className={`text-5xl sm:text-6xl font-black font-mono tracking-tight tabular-nums ${
+                className={`text-5xl sm:text-6xl font-extrabold font-mono tracking-tight tabular-nums ${
                   isDayPositive
                     ? "text-rose-400"
                     : isDayNegative
@@ -67,11 +67,11 @@ export function HeroStats({ stats, changuito = [] }: HeroStatsProps) {
                 {stats.varDiaGeneral > 0 ? `+${stats.varDiaGeneral.toFixed(2)}%` : `${stats.varDiaGeneral.toFixed(2)}%`}
               </span>
               <div className="flex flex-col">
-                <span className="text-xs sm:text-sm font-semibold text-slate-200">
-                  {isDayPositive ? "Suba promedio en 24h" : isDayNegative ? "Baja promedio en 24h" : "Sin variación neta"}
+                <span className="text-sm font-semibold text-slate-200">
+                  {isDayPositive ? "Promedio de suba en 24h" : isDayNegative ? "Promedio de baja en 24h" : "Sin variación neta"}
                 </span>
                 <span className="text-xs text-slate-400 font-mono tabular-nums">
-                  Acumulado mes actual:{" "}
+                  Acumulado este mes:{" "}
                   <strong className={stats.varMesGeneral >= 0 ? "text-rose-400 font-semibold" : "text-emerald-400 font-semibold"}>
                     {stats.varMesGeneral > 0 ? `+${stats.varMesGeneral.toFixed(2)}%` : `${stats.varMesGeneral.toFixed(2)}%`}
                   </strong>
@@ -80,80 +80,84 @@ export function HeroStats({ stats, changuito = [] }: HeroStatsProps) {
             </div>
           </div>
 
-          {/* Termómetro de Dispersión */}
-          <div className="space-y-2.5 pt-4 border-t border-surface-border">
+          {/* Barra de Dispersión sin subcajas anidadas */}
+          <div className="space-y-2.5 pt-4 border-t border-surface-border/60">
             <div className="flex items-center justify-between text-xs text-slate-300">
-              <span className="font-semibold uppercase tracking-wider text-slate-400">Dispersión de precios hoy</span>
+              <span className="font-semibold text-slate-400">Movimiento de precios hoy</span>
               <span className="font-mono text-slate-400 tabular-nums">
-                {stats.totalMonitoreados.toLocaleString("es-AR")} artículos auditados
+                {stats.totalMonitoreados.toLocaleString("es-AR")} artículos relevados
               </span>
             </div>
 
-            <div className="flex h-3 w-full overflow-hidden rounded-full bg-surface-200">
+            <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-surface-200">
               <div
                 style={{ width: `${Math.max(pctSubieron, stats.subieronDia > 0 ? 2 : 0)}%` }}
                 className="bg-rose-500 transition-all duration-300"
-                title={`${stats.subieronDia} subieron (${pctSubieron.toFixed(1)}%)`}
+                title={`${stats.subieronDia} subieron`}
               />
               <div
                 style={{ width: `${Math.max(pctBajaron, stats.bajaronDia > 0 ? 2 : 0)}%` }}
                 className="bg-emerald-500 transition-all duration-300"
-                title={`${stats.bajaronDia} bajaron (${pctBajaron.toFixed(1)}%)`}
+                title={`${stats.bajaronDia} bajaron`}
               />
               <div
                 style={{ width: `${pctCongelados}%` }}
                 className="bg-slate-700 transition-all duration-300"
-                title={`${stats.igualesDia} sin cambios (${pctCongelados.toFixed(1)}%)`}
+                title={`${stats.igualesDia} sin cambios`}
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-2 pt-1 text-center font-mono text-xs tabular-nums">
-              <div className="rounded bg-surface-200/50 p-2 border border-surface-border">
-                <span className="block text-slate-400 text-[11px]">Subieron</span>
+            {/* Fila limpia de datos directos, sin cajas adentro */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1 font-mono text-xs tabular-nums text-slate-300">
+              <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-rose-500" />
+                <span className="text-slate-400 font-sans">Subieron:</span>
                 <span className="font-bold text-rose-400">+{stats.subieronDia}</span>
-                <span className="block text-[10px] text-slate-400">({pctSubieron.toFixed(1)}%)</span>
+                <span className="text-slate-400 text-[11px]">({pctSubieron.toFixed(1)}%)</span>
               </div>
-              <div className="rounded bg-surface-200/50 p-2 border border-surface-border">
-                <span className="block text-slate-400 text-[11px]">Bajaron / Oferta</span>
+              <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                <span className="text-slate-400 font-sans">Bajaron:</span>
                 <span className="font-bold text-emerald-400">-{stats.bajaronDia}</span>
-                <span className="block text-[10px] text-slate-400">({pctBajaron.toFixed(1)}%)</span>
+                <span className="text-slate-400 text-[11px]">({pctBajaron.toFixed(1)}%)</span>
               </div>
-              <div className="rounded bg-surface-200/50 p-2 border border-surface-border">
-                <span className="block text-slate-400 text-[11px]">Congelados</span>
+              <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-slate-600" />
+                <span className="text-slate-400 font-sans">Sin cambios:</span>
                 <span className="font-bold text-slate-200">{stats.igualesDia.toLocaleString("es-AR")}</span>
-                <span className="block text-[10px] text-slate-400">({pctCongelados.toFixed(1)}%)</span>
+                <span className="text-slate-400 text-[11px]">({pctCongelados.toFixed(1)}%)</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Columna Derecha: Canasta Testigo "El Changuito" (5 columnas) */}
-        <div className="lg:col-span-5 rounded-xl bg-surface-100 border border-surface-border p-5 sm:p-7 flex flex-col justify-between space-y-4">
+        {/* Columna Derecha: Canasta Testigo de 6 alimentos */}
+        <div className="lg:col-span-5 rounded-xl bg-surface-100 border border-surface-border p-5 sm:p-6 flex flex-col justify-between space-y-4">
           <div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <ShoppingBasket className="h-4 w-4 text-brand-400" />
-                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-200">
-                  Canasta Testigo Esencial
+                <h2 className="text-sm font-bold text-slate-100">
+                  Canasta de 6 alimentos básicos
                 </h2>
               </div>
-              <span className="text-xs rounded bg-surface-200 px-2 py-0.5 text-slate-300 border border-surface-border">
-                6 artículos
+              <span className="text-xs text-slate-400 font-mono">
+                {changuito.length} productos
               </span>
             </div>
             <p className="mt-1 text-xs text-slate-400">
-              Seguimiento de alimentos básicos de consumo frecuente en góndola.
+              Leche, aceite, arroz, fideos, harina y yerba mate.
             </p>
 
-            <div className="mt-4 flex items-baseline justify-between border-b border-surface-border pb-3">
+            <div className="mt-3 flex items-baseline justify-between border-b border-surface-border/60 pb-3">
               <div>
-                <span className="text-xs text-slate-400 block">Total Canasta Testigo</span>
+                <span className="text-[11px] text-slate-400 block">Total de la canasta</span>
                 <span className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-100 tabular-nums">
                   {formatCurrency(totalChanguitoHoy)}
                 </span>
               </div>
               <div className="text-right">
-                <span className="text-xs text-slate-400 block">Var. 24h</span>
+                <span className="text-[11px] text-slate-400 block">Variación 24h</span>
                 <span className={`text-xs font-mono font-bold tabular-nums ${
                   Number(varChanguito) > 0 ? "text-rose-400" : Number(varChanguito) < 0 ? "text-emerald-400" : "text-slate-300"
                 }`}>
@@ -162,19 +166,22 @@ export function HeroStats({ stats, changuito = [] }: HeroStatsProps) {
               </div>
             </div>
 
-            {/* Listado de items del Changuito */}
-            <div className="mt-3 space-y-2">
+            {/* Lista directa de alimentos sin tarjetas anidadas */}
+            <div className="mt-2 divide-y divide-surface-border/40">
               {changuito.length === 0 ? (
                 <p className="text-xs text-slate-400 py-4 text-center">
-                  Cargando artículos testigo...
+                  Cargando productos de la canasta...
                 </p>
               ) : (
-                changuito.slice(0, 5).map((item) => (
-                  <div key={item.id} className="flex items-center justify-between text-xs py-1 border-b border-surface-border/50">
-                    <span className="text-slate-300 truncate max-w-[200px]" title={item.nombre}>
-                      {item.nombre}
-                    </span>
-                    <span className="font-mono font-semibold text-slate-100 tabular-nums flex-shrink-0">
+                changuito.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between py-2 text-xs">
+                    <div className="min-w-0 pr-3">
+                      <span className="text-slate-200 block truncate font-medium text-xs" title={item.nombre}>
+                        {item.nombre}
+                      </span>
+                      <span className="text-[11px] text-slate-400">{item.categoria}</span>
+                    </div>
+                    <span className="font-mono font-semibold text-slate-100 tabular-nums flex-shrink-0 text-sm">
                       {formatCurrency(item.precioHoy)}
                     </span>
                   </div>
@@ -183,9 +190,9 @@ export function HeroStats({ stats, changuito = [] }: HeroStatsProps) {
             </div>
           </div>
 
-          <div className="pt-2 text-[11px] text-slate-400 flex items-center justify-between border-t border-surface-border">
-            <span>Cálculo transparente directo de góndola</span>
-            <span className="font-mono text-slate-400">100% stock real</span>
+          <div className="pt-2 text-[11px] text-slate-400 flex items-center justify-between border-t border-surface-border/60">
+            <span>Precios vigentes al corte de hoy</span>
+            <span className="font-mono text-slate-400">Stock activo</span>
           </div>
         </div>
       </div>

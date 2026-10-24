@@ -77,10 +77,10 @@ export function ProductSearch() {
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-100">
-            Buscador de Precios en Góndola
+            Buscador de productos
           </h2>
           <p className="text-xs sm:text-sm text-slate-400">
-            Consultá valores actuales e historial de variaciones por artículo.
+            Escribí una marca o producto para consultar su precio actual y el historial.
           </p>
         </div>
 

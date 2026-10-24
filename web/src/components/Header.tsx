@@ -34,14 +34,14 @@ export function Header({ fechaHoy }: HeaderProps) {
               </span>
             </div>
             <p className="text-xs text-slate-400">
-              Índice independiente de precios en góndola digital
+              Seguimiento diario de precios de góndola
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3 sm:gap-5">
           <div className="text-right">
-            <span className="block text-xs uppercase tracking-wider text-slate-400 font-semibold">Corte diario</span>
+            <span className="block text-xs uppercase tracking-wider text-slate-400 font-semibold">Último corte</span>
             <span className="text-xs sm:text-sm font-semibold text-slate-200 font-mono tabular-nums">{formatFecha(fechaHoy)}</span>
           </div>
 

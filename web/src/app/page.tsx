@@ -51,7 +51,7 @@ export default async function HomePage() {
 
       <footer className="mt-20 border-t border-surface-border bg-surface-100 py-10 text-xs text-slate-400">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© {new Date().getFullYear()} Carrefour Tracker. Relevamiento técnico independiente sobre góndola digital.</p>
+          <p>© {new Date().getFullYear()} Carrefour Tracker. Datos públicos de góndola para seguimiento de precios.</p>
           <div className="flex items-center gap-6">
             <a href="https://github.com/sidarg/carrefour-bot" target="_blank" rel="noopener noreferrer" className="hover:text-slate-200 transition-colors">
               Repositorio GitHub

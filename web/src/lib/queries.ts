@@ -150,7 +150,8 @@ export async function getDashboardData(): Promise<DashboardData> {
     LIMIT 6;
   `;
 
-  // Canasta Testigo: 6 artículos esenciales de consumo masivo
+  // Canasta Testigo: 6 alimentos básicos representativos (leche, aceite, arroz, fideos, harina y yerba)
+  const STAPLE_IDS = ['720021', '757629', '673599', '744474', '605381', '708486'];
   const changuitoResult = await sql`
     SELECT 
       p.id,
@@ -158,25 +159,13 @@ export async function getDashboardData(): Promise<DashboardData> {
       p.categoria,
       p.url,
       h_hoy.precio::float AS precio_hoy,
-      h_ayer.precio::float AS precio_ayer,
-      ROUND(((h_hoy.precio - h_ayer.precio) / h_ayer.precio) * 100, 2)::float AS var_dia
+      COALESCE(h_ayer.precio, h_hoy.precio)::float AS precio_ayer,
+      COALESCE(ROUND(((h_hoy.precio - h_ayer.precio) / h_ayer.precio) * 100, 2), 0.00)::float AS var_dia
     FROM productos p
     JOIN historial_precios h_hoy ON h_hoy.producto_id = p.id AND h_hoy.fecha = ${f_hoy}::date
-    JOIN historial_precios h_ayer ON h_ayer.producto_id = p.id AND h_ayer.fecha = ${f_ayer}::date
-    WHERE p.activo = TRUE 
-      AND h_hoy.precio > 500 
-      AND h_hoy.precio <= 25000
-      AND h_ayer.precio > 0
-      AND (
-        p.nombre ILIKE '%leche%' 
-        OR p.nombre ILIKE '%aceite%' 
-        OR p.nombre ILIKE '%fideos%' 
-        OR p.nombre ILIKE '%arroz%' 
-        OR p.nombre ILIKE '%yerba%' 
-        OR p.nombre ILIKE '%harina%'
-      )
-    ORDER BY p.nombre ASC
-    LIMIT 6;
+    LEFT JOIN historial_precios h_ayer ON h_ayer.producto_id = p.id AND h_ayer.fecha = ${f_ayer}::date
+    WHERE p.id = ANY(${STAPLE_IDS})
+    ORDER BY p.categoria ASC;
   `;
 
   const dashboardPayload: DashboardData = {
