@@ -3,20 +3,19 @@
 @tailwind utilities;
 
 :root {
-  --background: #F4F6F9;
-  --foreground: #0F172A;
+  --background: #090a0c;
+  --foreground: #e6dfd5;
 }
 
 html {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 body {
-  color: #0F172A;
-  background-color: #F4F6F9;
+  color: #e6dfd5;
+  background-color: #090a0c;
   font-size: 15px;
   line-height: 1.5;
-  font-family: 'Bricolage Grotesque', system-ui, -apple-system, sans-serif;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum";
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
@@ -70,10 +69,25 @@ input, select, textarea, button {
 
 .corner-ticks {
   position: absolute;
-  inset: -9px;
+  inset: -4px;
   pointer-events: none;
   border-left: 1.5px solid rgba(230, 223, 213, 0.5);
   border-right: 1.5px solid rgba(230, 223, 213, 0.5);
+}
+
+@media (min-width: 640px) {
+  .corner-ticks {
+    inset: -9px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 .ticket-clipped {

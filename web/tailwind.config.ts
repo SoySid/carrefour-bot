@@ -10,10 +10,10 @@ const config: Config = {
     extend: {
       fontFamily: {
         serif: ["'Newsreader'", "Georgia", "serif"],
-        sans: ["'Bricolage Grotesque'", "system-ui", "-apple-system", "sans-serif"],
-        mono: ["'JetBrains Mono'", "monospace"],
-        anton: ["'Anton'", "sans-serif"],
-        oswald: ["'Oswald'", "sans-serif"],
+        sans: ["var(--font-oswald)", "system-ui", "-apple-system", "sans-serif"],
+        mono: ["var(--font-mono)", "monospace"],
+        anton: ["var(--font-anton)", "sans-serif"],
+        oswald: ["var(--font-oswald)", "sans-serif"],
       },
       colors: {
         paper: {
