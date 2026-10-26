@@ -51,7 +51,11 @@ export function PriceSparkline({
 
   const isUp = lastPoint.price > firstPoint.price;
   const isDown = lastPoint.price < firstPoint.price;
+  const diff = lastPoint.price - firstPoint.price;
+  const pctChange = firstPoint.price > 0 ? (diff / firstPoint.price) * 100 : 0;
+
   const strokeColor = isUp ? "#a62626" : isDown ? "#1b7a43" : "#141413";
+  const badgeBg = isUp ? "bg-[#a62626]/10 text-[#a62626]" : isDown ? "bg-[#1b7a43]/10 text-[#1b7a43]" : "bg-[#141413]/10 text-[#141413]";
   const fillColor = isUp
     ? "rgba(166, 38, 38, 0.08)"
     : isDown
@@ -59,7 +63,17 @@ export function PriceSparkline({
     : "rgba(20, 20, 19, 0.05)";
 
   return (
-    <div className="w-full space-y-1">
+    <div className="w-full space-y-1.5">
+      {/* Resumen nítido de la variación */}
+      <div className="flex items-center justify-between text-[11px] font-mono border-b border-[#181715]/15 pb-1">
+        <span className="text-[#4a4845]">
+          {formatCurrency(firstPoint.price)} <span className="text-[#888]">→</span> <strong className="text-[#141413]">{formatCurrency(lastPoint.price)}</strong>
+        </span>
+        <span className={`px-1.5 py-0.5 rounded font-bold tabular-nums text-[10px] ${badgeBg}`}>
+          {diff > 0 ? `+${formatCurrency(diff)} (+${pctChange.toFixed(1)}%)` : diff < 0 ? `${formatCurrency(diff)} (${pctChange.toFixed(1)}%)` : "Sin variación"}
+        </span>
+      </div>
+
       <div className="overflow-hidden rounded bg-[#eae3da] border border-[#181715]/40 p-2 text-[#141413]">
         <svg
           viewBox={`0 0 ${width} ${height}`}

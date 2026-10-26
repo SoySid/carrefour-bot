@@ -110,17 +110,17 @@ export function HeroStats({ stats, changuito = [] }: HeroStatsProps) {
               <div className="flex flex-wrap sm:flex-nowrap items-center justify-between text-xs sm:text-[0.93rem] font-bold text-[#141413] pt-0.5 gap-2">
                 <div className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#a62626] inline-block flex-shrink-0" />
-                  <span>• {subieron} SUBIERON ({pctSubieron.toFixed(1)}%)</span>
+                  <span>{subieron} SUBIERON ({pctSubieron.toFixed(1)}%)</span>
                 </div>
                 <div className="hidden sm:block w-[1.5px] h-5 bg-[#55524d]" />
                 <div className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#1b7a43] inline-block flex-shrink-0" />
-                  <span>• {bajaron} BAJARON ({pctBajaron.toFixed(1)}%)</span>
+                  <span>{bajaron} BAJARON ({pctBajaron.toFixed(1)}%)</span>
                 </div>
                 <div className="hidden sm:block w-[1.5px] h-5 bg-[#55524d]" />
                 <div className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#6e706e] inline-block flex-shrink-0" />
-                  <span>• {estables} ESTABLES ({pctEstables.toFixed(1)}%)</span>
+                  <span>{estables} ESTABLES ({pctEstables.toFixed(1)}%)</span>
                 </div>
               </div>
             </div>
@@ -175,19 +175,6 @@ export function HeroStats({ stats, changuito = [] }: HeroStatsProps) {
               </div>
               <div className="absolute bottom-1 right-1.5 w-7 h-7 border-r-2 border-b-2 border-[#222] -skew-x-12 opacity-60 pointer-events-none" />
             </div>
-
-            {/* Flechas de tiza hacia el Ticket en pantallas desktop */}
-            <svg
-              className="hidden lg:block absolute -right-9 top-1/2 -translate-y-1/2 w-12 h-28 pointer-events-none z-20"
-              viewBox="0 0 60 120"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path d="M5 20 C 20 15, 35 12, 52 10" stroke="#c8c2b8" strokeWidth="1.6" strokeLinecap="round" />
-              <path d="M45 5 L 53 10 L 44 15" stroke="#c8c2b8" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M55 70 C 42 82, 28 90, 8 94" stroke="#c8c2b8" strokeWidth="1.6" strokeLinecap="round" />
-              <path d="M16 88 L 7 94 L 17 98" stroke="#c8c2b8" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
           </div>
         </div>
 

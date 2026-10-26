@@ -5,23 +5,23 @@ export function Methodology() {
   const points = [
     {
       icon: Scale,
-      title: "Ponderación por gasto",
-      desc: "Carnes (22%), Almacén (20%) y Lácteos (15%) representan más de la mitad del índice para reflejar el consumo familiar real.",
+      title: "Ponderación por consumo",
+      desc: "La canasta asigna mayor peso a carnes (22%), almacén (20%) y lácteos (15%), siguiendo la distribución del gasto familiar.",
     },
     {
       icon: ShieldCheck,
-      title: "Filtro de anomalías",
-      desc: "Se descartan saltos mayores al 100% o caídas superiores al 50% en un solo día, que suelen responder a equivocaciones tipográficas del supermercado.",
+      title: "Filtro de valores extremos",
+      desc: "Se omiten variaciones diarias mayores al 100% o caídas superiores al 50% para descartar errores de carga en góndola digital.",
     },
     {
       icon: Database,
-      title: "Catálogo directo y con stock",
-      desc: "Solo se computan artículos con disponibilidad inmediata y entrega directa de Carrefour, excluyendo vendedores externos.",
+      title: "Artículos con disponibilidad",
+      desc: "Solo se relevan productos con entrega directa de Carrefour y stock confirmado, sin vendedores externos del marketplace.",
     },
     {
       icon: RefreshCw,
-      title: "Corte diario automatizado",
-      desc: "El relevamiento corre de forma autónoma todas las mañanas y guarda el registro histórico en PostgreSQL.",
+      title: "Actualización diaria",
+      desc: "El sistema releva el catálogo cada mañana y almacena los precios para construir la serie histórica.",
     },
   ];
 
@@ -33,16 +33,8 @@ export function Methodology() {
 
       <div className="paper-card sketch-frame p-5 sm:p-7 space-y-4">
         <div className="corner-ticks"></div>
-        <div>
-          <h3 className="font-['Oswald'] text-xl font-bold tracking-[1px] text-[#141413] uppercase">
-            ESTÁNDAR DE MEDICIÓN Y TRANSPARENCIA
-          </h3>
-          <p className="text-xs sm:text-sm font-mono text-[#4a4845]">
-            Criterios de normalización aplicados sobre el catálogo público digital.
-          </p>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-2 border-t border-dashed border-[#7c766e]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 font-mono">
           {points.map((p, idx) => {
             const Icon = p.icon;
             return (

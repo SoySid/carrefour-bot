@@ -21,8 +21,7 @@ export function Header({ fechaHoy }: HeaderProps) {
         {/* Acceso a Telegram, GitHub y Sello de Corte */}
         <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
           {fechaFormateada && (
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#e6dfd5]/40 text-[#e6dfd5] text-xs font-mono font-bold bg-[#141413] shadow-[1px_1px_0_rgba(230,223,213,0.3)] min-h-[38px]">
-              <span className="w-2 h-2 rounded-full bg-[#1b7a43] animate-pulse" />
+            <div className="inline-flex items-center px-3 py-1.5 border border-[#e6dfd5]/40 text-[#e6dfd5] text-xs font-mono font-bold bg-[#141413] shadow-[1px_1px_0_rgba(230,223,213,0.3)] min-h-[38px]">
               <span>CORTE: {fechaFormateada}</span>
             </div>
           )}

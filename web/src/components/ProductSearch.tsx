@@ -148,7 +148,7 @@ export function ProductSearch() {
               <span className="text-[#a62626]">TOCÁ UN ARTÍCULO PARA VER SU SERIE</span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
               {results.map((prod) => {
                 const isExpanded = expandedId === prod.id;
                 const prodHistory = history[prod.id] || [];
