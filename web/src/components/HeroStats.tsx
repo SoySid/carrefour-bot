@@ -2,9 +2,10 @@
 
 import React, { useState } from "react";
 import { DailyStats, ChanguitoItem, PricePoint } from "@/lib/types";
-import { ShoppingBag, Loader2, ExternalLink } from "lucide-react";
+import { ShoppingBag, Loader2, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
 import { PriceSparkline } from "./PriceSparkline";
 import { safeExternalUrl } from "@/lib/security";
+import { formatCurrency } from "@/lib/format";
 
 interface HeroStatsProps {
   stats: DailyStats;
@@ -12,26 +13,18 @@ interface HeroStatsProps {
 }
 
 export function HeroStats({ stats, changuito = [] }: HeroStatsProps) {
-  const [selectedItem, setSelectedItem] = useState<ChanguitoItem | null>(null);
-  const [history, setHistory] = useState<PricePoint[]>([]);
-  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [historyCache, setHistoryCache] = useState<Record<string, PricePoint[]>>({});
+  const [loadingHistoryId, setLoadingHistoryId] = useState<string | null>(null);
 
   const subieron = stats.subieronDia || 0;
   const bajaron = stats.bajaronDia || 0;
   const estables = stats.igualesDia || 0;
   const totalMovs = subieron + bajaron + estables || 1;
 
-  const pctSubieron = ((subieron / totalMovs) * 100);
-  const pctBajaron = ((bajaron / totalMovs) * 100);
-  const pctEstables = ((estables / totalMovs) * 100);
-
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat("es-AR", {
-      style: "currency",
-      currency: "ARS",
-      maximumFractionDigits: 0,
-    }).format(val);
-  };
+  const pctSubieron = (subieron / totalMovs) * 100;
+  const pctBajaron = (bajaron / totalMovs) * 100;
+  const pctEstables = (estables / totalMovs) * 100;
 
   const totalChanguitoHoy = changuito.reduce((acc, it) => acc + (it.precioHoy || 0), 0);
   const totalChanguitoAyer = changuito.reduce((acc, it) => acc + (it.precioAyer || 0), 0);
@@ -41,35 +34,30 @@ export function HeroStats({ stats, changuito = [] }: HeroStatsProps) {
       : "0.0";
 
   const handleSelectChanguitoItem = async (it: ChanguitoItem) => {
-    if (selectedItem?.id === it.id) {
-      setSelectedItem(null);
+    if (selectedItemId === it.id) {
+      setSelectedItemId(null);
       return;
     }
-    setSelectedItem(it);
-    setLoadingHistory(true);
-    try {
-      const res = await fetch(`/api/history/${it.id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setHistory(data);
+    setSelectedItemId(it.id);
+
+    if (!historyCache[it.id]) {
+      setLoadingHistoryId(it.id);
+      try {
+        const res = await fetch(`/api/history/${it.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setHistoryCache((prev) => ({ ...prev, [it.id]: data }));
+        }
+      } catch (err) {
+        console.error("Error al cargar historial del changuito:", err);
+      } finally {
+        setLoadingHistoryId(null);
       }
-    } catch (err) {
-      console.error("Error al cargar historial del changuito:", err);
-    } finally {
-      setLoadingHistory(false);
     }
   };
 
   return (
     <div className="relative text-[#e6dfd5] font-mono">
-      {/* SVG Filters para texturas grunge y de borde */}
-      <svg width="0" height="0" className="absolute pointer-events-none">
-        <filter id="rough-edge">
-          <feTurbulence type="turbulence" baseFrequency="0.08" numOctaves="2" result="turbulence" />
-          <feDisplacementMap in2="turbulence" in="SourceGraphic" scale="4" xChannelSelector="R" yChannelSelector="G" />
-        </filter>
-      </svg>
-
       {/* Título de Sección Principal */}
       <div className="mb-6">
         <h1 className="font-['Oswald'] text-3xl sm:text-5xl lg:text-[3.2rem] font-bold tracking-[2px] leading-[1.05] text-[#e6dfd5] uppercase drop-shadow-[2px_3px_0px_rgba(0,0,0,0.85)]">
@@ -94,11 +82,12 @@ export function HeroStats({ stats, changuito = [] }: HeroStatsProps) {
               </div>
 
               {/* Barra segmentada funcional con proporciones reales */}
-              <div className="w-full h-[29px] border-2 border-[#252422] rounded-2xl bg-[#dfdad2] relative overflow-hidden flex items-center mb-3.5 shadow-[inset_0_1px_3px_rgba(0,0,0,0.25)]">
-                <span className="text-[#a62626] font-extrabold text-lg pl-2 pr-1 z-10 leading-none select-none">
-                  →
-                </span>
-                <div className="flex-1 h-full flex rounded-r-xl overflow-hidden">
+              <div
+                className="w-full h-[29px] border-2 border-[#252422] rounded-2xl bg-[#dfdad2] relative overflow-hidden flex items-center mb-3.5 shadow-[inset_0_1px_3px_rgba(0,0,0,0.25)]"
+                role="img"
+                aria-label={`Distribución de precios: ${subieron} subieron, ${bajaron} bajaron, ${estables} estables`}
+              >
+                <div className="flex-1 h-full flex rounded-xl overflow-hidden">
                   <div
                     style={{ width: `${Math.max(pctSubieron, subieron > 0 ? 3 : 0)}%` }}
                     className="bg-[#a62626] h-full transition-all duration-300"
@@ -223,80 +212,93 @@ export function HeroStats({ stats, changuito = [] }: HeroStatsProps) {
 
             <div className="border-b-[1.5px] border-dashed border-[#7c766e] my-2" />
 
-            {/* Listado dinámico de ítems del Ticket */}
-            <div className="space-y-2.5">
+            {/* Listado dinámico de ítems del Ticket con despliegue inline y botón accesible */}
+            <div className="space-y-1.5">
               {changuito.map((it) => {
-                const isSelected = selectedItem?.id === it.id;
+                const isSelected = selectedItemId === it.id;
+                const itHistory = historyCache[it.id] || [];
+                const isLoadingThis = loadingHistoryId === it.id;
+
                 return (
-                  <div
-                    key={it.id}
-                    onClick={() => handleSelectChanguitoItem(it)}
-                    className={`cursor-pointer p-1.5 rounded transition-colors group ${
-                      isSelected ? "bg-black/10 ring-1 ring-[#141413]" : "hover:bg-black/5"
-                    }`}
-                  >
-                    <div className="font-['Oswald'] text-[11px] font-bold text-[#3a3734] tracking-[0.5px] uppercase">
-                      {it.categoria || "ALMACÉN"} —
-                    </div>
-                    <div className="flex justify-between items-baseline font-['Oswald'] font-bold text-xs sm:text-[13px] tracking-[0.4px] text-[#161514]">
-                      <span className="truncate pr-2 group-hover:underline" title={it.nombre}>
-                        {it.nombre}
-                      </span>
-                      <span className="font-mono font-extrabold text-xs whitespace-nowrap">
-                        {formatCurrency(it.precioHoy)}
-                      </span>
-                    </div>
-                    <div className="flex items-baseline font-mono text-[11px] font-bold text-[#2c2a28] mt-0.5">
-                      {it.varDia !== 0 ? (
-                        <span
-                          className={it.varDia > 0 ? "text-[#a62626]" : "text-[#1b7a43]"}
-                        >
-                          {it.varDia > 0 ? `+${it.varDia}%` : `${it.varDia}%`}
+                  <div key={it.id} className="border-b border-[#7c766e]/20 last:border-b-0 pb-1">
+                    <button
+                      type="button"
+                      aria-expanded={isSelected}
+                      onClick={() => handleSelectChanguitoItem(it)}
+                      className={`w-full text-left p-1.5 rounded transition-colors group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#141413] ${
+                        isSelected ? "bg-black/10 ring-1 ring-[#141413]" : "hover:bg-black/5"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="font-['Oswald'] text-[11px] font-bold text-[#3a3734] tracking-[0.5px] uppercase">
+                          {it.categoria || "ALMACÉN"} —
+                        </div>
+                        <span className="text-[#141413] opacity-60 group-hover:opacity-100">
+                          {isSelected ? (
+                            <ChevronUp className="h-3 w-3" />
+                          ) : (
+                            <ChevronDown className="h-3 w-3" />
+                          )}
                         </span>
-                      ) : (
-                        <span>VAR 0.0%</span>
-                      )}
-                      <span className="flex-1 border-b-[1.5px] border-dotted border-[#5c5750] mx-1.5 relative -top-[3px]" />
-                      {it.precioAyer > 0 && it.precioAyer !== it.precioHoy && (
-                        <span className="line-through opacity-60 text-[10px]">
-                          {formatCurrency(it.precioAyer)}
+                      </div>
+                      <div className="flex justify-between items-baseline font-['Oswald'] font-bold text-xs sm:text-[13px] tracking-[0.4px] text-[#161514]">
+                        <span className="truncate pr-2 group-hover:underline" title={it.nombre}>
+                          {it.nombre}
                         </span>
-                      )}
-                    </div>
+                        <span className="font-mono font-extrabold text-xs whitespace-nowrap">
+                          {formatCurrency(it.precioHoy)}
+                        </span>
+                      </div>
+                      <div className="flex items-baseline font-mono text-[11px] font-bold text-[#2c2a28] mt-0.5">
+                        {it.varDia !== 0 ? (
+                          <span className={it.varDia > 0 ? "text-[#a62626]" : "text-[#1b7a43]"}>
+                            {it.varDia > 0 ? `+${it.varDia}%` : `${it.varDia}%`}
+                          </span>
+                        ) : (
+                          <span>VAR 0.0%</span>
+                        )}
+                        <span className="flex-1 border-b-[1.5px] border-dotted border-[#5c5750] mx-1.5 relative -top-[3px]" />
+                        {it.precioAyer > 0 && it.precioAyer !== it.precioHoy && (
+                          <span className="line-through opacity-60 text-[10px]">
+                            {formatCurrency(it.precioAyer)}
+                          </span>
+                        )}
+                      </div>
+                    </button>
+
+                    {/* Despliegue inline del historial */}
+                    {isSelected && (
+                      <div className="my-1.5 p-2.5 bg-[#dfdad2]/80 border border-[#141413] rounded text-xs space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold truncate pr-2 text-[#141413] text-[11px]">
+                            Curva: {it.nombre}
+                          </span>
+                          {safeExternalUrl(it.url) && (
+                            <a
+                              href={safeExternalUrl(it.url)!}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#a62626] hover:underline flex items-center gap-1 font-mono font-bold text-[10px] flex-shrink-0"
+                            >
+                              <span>Góndola</span>
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          )}
+                        </div>
+                        {isLoadingThis ? (
+                          <div className="flex items-center justify-center py-3 text-[#141413] gap-1.5 font-mono text-xs">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            <span>Cargando serie...</span>
+                          </div>
+                        ) : (
+                          <PriceSparkline data={itHistory} height={44} />
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
-
-            {/* Evolución histórica desplegable si se selecciona un ítem */}
-            {selectedItem && (
-              <div className="mt-3 p-3 bg-white/70 border border-[#141413] rounded text-xs space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold truncate pr-2 text-[#141413]">
-                    Historial: {selectedItem.nombre}
-                  </span>
-                  {safeExternalUrl(selectedItem.url) && (
-                    <a
-                      href={safeExternalUrl(selectedItem.url)!}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#a62626] hover:underline flex items-center gap-1 font-mono font-bold text-[11px] flex-shrink-0"
-                    >
-                      <span>Ver góndola</span>
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  )}
-                </div>
-                {loadingHistory ? (
-                  <div className="flex items-center justify-center py-3 text-[#141413] gap-1.5 font-mono text-xs">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    <span>Cargando serie...</span>
-                  </div>
-                ) : (
-                  <PriceSparkline data={history} height={44} />
-                )}
-              </div>
-            )}
 
             {/* Total del Ticket */}
             <div className="mt-3 pt-2 border-t-[1.5px] border-dashed border-[#7c766e]">

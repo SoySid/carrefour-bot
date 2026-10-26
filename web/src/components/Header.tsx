@@ -1,11 +1,14 @@
 import React from "react";
 import { Send, ArrowUpRight } from "lucide-react";
+import { formatFechaCorta } from "@/lib/format";
 
 interface HeaderProps {
   fechaHoy: string;
 }
 
 export function Header({ fechaHoy }: HeaderProps) {
+  const fechaFormateada = formatFechaCorta(fechaHoy);
+
   return (
     <header className="w-full pt-4 pb-2">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -15,13 +18,20 @@ export function Header({ fechaHoy }: HeaderProps) {
           <span className="inline-block w-2 sm:w-2.5 h-2 sm:h-2.5 bg-[#e6dfd5] align-baseline ml-1.5 mb-1" />
         </div>
 
-        {/* Acceso a Telegram y GitHub en estética sobria */}
-        <div className="flex items-center gap-3">
+        {/* Acceso a Telegram, GitHub y Sello de Corte */}
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+          {fechaFormateada && (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#e6dfd5]/40 text-[#e6dfd5] text-xs font-mono font-bold bg-[#141413] shadow-[1px_1px_0_rgba(230,223,213,0.3)] min-h-[38px]">
+              <span className="w-2 h-2 rounded-full bg-[#1b7a43] animate-pulse" />
+              <span>CORTE: {fechaFormateada}</span>
+            </div>
+          )}
+
           <a
             href="https://t.me/carrefour_monitor_bot"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#e6dfd5]/40 hover:border-[#e6dfd5] text-[#e6dfd5] text-xs font-mono font-semibold transition-colors bg-white/5 rounded"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#e6dfd5]/40 hover:border-[#e6dfd5] text-[#e6dfd5] text-xs font-mono font-semibold transition-colors bg-white/5 rounded min-h-[38px]"
           >
             <Send className="h-3.5 w-3.5" />
             <span>Alertas Telegram</span>
@@ -31,7 +41,7 @@ export function Header({ fechaHoy }: HeaderProps) {
             href="https://github.com/sidarg/carrefour-bot"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#e6dfd5]/40 hover:border-[#e6dfd5] text-[#e6dfd5] text-xs font-mono font-semibold transition-colors bg-white/5 rounded"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#e6dfd5]/40 hover:border-[#e6dfd5] text-[#e6dfd5] text-xs font-mono font-semibold transition-colors bg-white/5 rounded min-h-[38px]"
           >
             <span>GitHub</span>
           </a>

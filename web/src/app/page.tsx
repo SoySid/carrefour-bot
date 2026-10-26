@@ -56,6 +56,17 @@ export default async function HomePage() {
       <div className="relative z-10 w-full max-w-[1240px] mx-auto px-4 sm:px-8 py-6 flex-1 flex flex-col space-y-8">
         <Header fechaHoy={data.stats.fechaHoy} />
 
+        {data.stats.totalMonitoreados === 0 && (
+          <div className="p-4 border-2 border-[#a62626] bg-[#141413] text-[#e6dfd5] font-mono text-xs sm:text-sm space-y-1">
+            <div className="text-[#a62626] font-bold uppercase tracking-wider">
+              AVISO DE CONEXIÓN
+            </div>
+            <div>
+              No se pudo obtener el relevamiento del corte actual desde la base de datos. Los valores mostrados abajo son datos por defecto mientras se restablece el servicio.
+            </div>
+          </div>
+        )}
+
         {/* Portada Macro Editorial + Ticket Changuito */}
         <HeroStats stats={data.stats} changuito={data.changuito} />
 

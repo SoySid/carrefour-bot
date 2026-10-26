@@ -5,6 +5,7 @@ import { Search, Loader2, X, ExternalLink, ChevronDown, ChevronUp } from "lucide
 import { ProductSearchResult, PricePoint } from "@/lib/types";
 import { safeExternalUrl } from "@/lib/security";
 import { PriceSparkline } from "./PriceSparkline";
+import { formatCurrency } from "@/lib/format";
 
 export function ProductSearch() {
   const [query, setQuery] = useState("");
@@ -62,14 +63,6 @@ export function ProductSearch() {
     }
   };
 
-  const formatCurrency = (valor: number) => {
-    return new Intl.NumberFormat("es-AR", {
-      style: "currency",
-      currency: "ARS",
-      maximumFractionDigits: 0,
-    }).format(valor);
-  };
-
   return (
     <div className="relative mt-8">
       {/* Pestaña superior */}
@@ -90,14 +83,14 @@ export function ProductSearch() {
             </p>
           </div>
 
-          {/* Accesos rápidos estilo sellos */}
+          {/* Accesos rápidos con touch-target accesible */}
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-[11px] font-mono text-[#55524d] mr-1 font-bold">FRECUENTES:</span>
             {["Leche", "Aceite", "Yerba", "Arroz", "Fideos", "Café"].map((chip) => (
               <button
                 key={chip}
                 onClick={() => setQuery(chip)}
-                className="text-xs font-mono font-bold px-2.5 py-1 bg-[#dcd4c8] hover:bg-[#eadca6] border border-[#181715] text-[#141413] transition-colors active:scale-95 shadow-[1px_1px_0_rgba(0,0,0,0.15)]"
+                className="text-xs font-mono font-bold px-3 py-1.5 min-h-[34px] bg-[#dcd4c8] hover:bg-[#eadca6] border border-[#181715] text-[#141413] transition-colors active:scale-95 shadow-[1px_1px_0_rgba(0,0,0,0.15)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#141413]"
               >
                 {chip}
               </button>
@@ -105,7 +98,7 @@ export function ProductSearch() {
           </div>
         </div>
 
-        {/* Input de búsqueda estilo ficha técnica */}
+        {/* Input de búsqueda estilo ficha técnica con anillo de foco visible */}
         <div className="relative">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#141413] pointer-events-none opacity-70" />
           <input
@@ -113,7 +106,7 @@ export function ProductSearch() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar por artículo o marca (ej. La Serenísima, Cocinero, Matarazzo, Marolio)..."
-            className="w-full border-2 border-[#181715] bg-[#dfdad2] py-2.5 pl-10 pr-10 text-sm font-mono font-medium text-[#141413] placeholder-[#6e706e] focus:bg-[#f3eee8] focus:outline-none shadow-[inset_0_1px_3px_rgba(0,0,0,0.15)]"
+            className="w-full border-2 border-[#181715] bg-[#dfdad2] py-2.5 pl-10 pr-11 text-sm font-mono font-medium text-[#141413] placeholder-[#6e706e] focus:bg-[#f3eee8] focus:outline-none focus:ring-2 focus:ring-[#a62626] shadow-[inset_0_1px_3px_rgba(0,0,0,0.15)]"
           />
           {query ? (
             <button
@@ -122,8 +115,9 @@ export function ProductSearch() {
                 setResults([]);
                 setExpandedId(null);
               }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-[#141413] hover:opacity-70"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-[#141413] hover:opacity-70 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#141413]"
               title="Borrar texto"
+              aria-label="Borrar texto de búsqueda"
             >
               <X className="h-4 w-4" />
             </button>
@@ -133,6 +127,18 @@ export function ProductSearch() {
             </div>
           ) : null}
         </div>
+
+        {/* Estado Vacío Explícito cuando no hay resultados */}
+        {query.trim().length >= 2 && !loading && results.length === 0 && (
+          <div className="p-4 border-2 border-dashed border-[#7c766e] bg-[#dfdad2]/50 text-center font-mono text-xs text-[#4a4845] space-y-1.5">
+            <div className="font-bold text-[#141413] uppercase tracking-wide">
+              Sin coincidencias para «{query}»
+            </div>
+            <div>
+              Verificá la ortografía o intentá con palabras más genéricas (ej. «leche», «fideos», «aceite»).
+            </div>
+          </div>
+        )}
 
         {/* Listado de resultados */}
         {results.length > 0 && (
@@ -157,15 +163,19 @@ export function ProductSearch() {
                         : "bg-[#e8e2d9] hover:bg-[#efe9df]"
                     }`}
                   >
-                    <div
+                    <button
+                      type="button"
+                      aria-expanded={isExpanded}
                       onClick={() => handleToggleExpand(prod)}
-                      className="p-3 cursor-pointer flex items-center justify-between gap-3 select-none"
+                      className="w-full text-left p-3 cursor-pointer flex items-center justify-between gap-3 select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#141413]"
                     >
                       {prod.imagenUrl ? (
                         <div className="h-11 w-11 rounded border border-[#181715] bg-white p-0.5 flex-shrink-0 flex items-center justify-center overflow-hidden">
                           <img
                             src={prod.imagenUrl}
                             alt={prod.nombre}
+                            width={44}
+                            height={44}
                             className="max-h-full max-w-full object-contain"
                             loading="lazy"
                           />
@@ -208,7 +218,7 @@ export function ProductSearch() {
                           )}
                         </div>
                       </div>
-                    </div>
+                    </button>
 
                     {/* Evolución desplegable */}
                     {isExpanded && (
@@ -220,7 +230,7 @@ export function ProductSearch() {
                               href={safeExternalUrl(prod.url)!}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[#a62626] hover:underline flex items-center gap-1 text-[11px]"
+                              className="text-[#a62626] hover:underline flex items-center gap-1 text-[11px] min-h-[30px] items-center"
                             >
                               <span>VER EN CARREFOUR</span>
                               <ExternalLink className="h-3 w-3" />

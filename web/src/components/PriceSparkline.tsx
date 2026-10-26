@@ -2,6 +2,7 @@
 
 import React from "react";
 import { PricePoint } from "@/lib/types";
+import { formatCurrency, formatFechaCorta } from "@/lib/format";
 
 interface PriceSparklineProps {
   data: PricePoint[];
@@ -18,7 +19,7 @@ export function PriceSparkline({
 }: PriceSparklineProps) {
   if (!data || data.length < 2) {
     return (
-      <div className="py-2 text-[11px] text-ink-500 font-mono">
+      <div className="py-2 text-[11px] text-[#55524d] font-mono">
         Datos insuficientes para trazar la curva
       </div>
     );
@@ -50,29 +51,16 @@ export function PriceSparkline({
 
   const isUp = lastPoint.price > firstPoint.price;
   const isDown = lastPoint.price < firstPoint.price;
-  const strokeColor = isUp ? "#D92D20" : isDown ? "#067647" : "#004E98";
+  const strokeColor = isUp ? "#a62626" : isDown ? "#1b7a43" : "#141413";
   const fillColor = isUp
-    ? "rgba(217, 45, 32, 0.08)"
+    ? "rgba(166, 38, 38, 0.08)"
     : isDown
-    ? "rgba(6, 118, 71, 0.08)"
-    : "rgba(0, 78, 152, 0.08)";
-
-  const formatShortCurrency = (val: number) => {
-    return new Intl.NumberFormat("es-AR", {
-      style: "currency",
-      currency: "ARS",
-      maximumFractionDigits: 0,
-    }).format(val);
-  };
-
-  const formatDateLabel = (f: string) => {
-    const parts = f.split("-");
-    return parts.length === 3 ? `${parts[2]}/${parts[1]}` : f;
-  };
+    ? "rgba(27, 122, 67, 0.08)"
+    : "rgba(20, 20, 19, 0.05)";
 
   return (
     <div className="w-full space-y-1">
-      <div className="overflow-hidden rounded bg-paper-50 border border-paper-border/60 p-2">
+      <div className="overflow-hidden rounded bg-[#eae3da] border border-[#181715]/40 p-2 text-[#141413]">
         <svg
           viewBox={`0 0 ${width} ${height}`}
           className="w-full h-auto overflow-visible"
@@ -92,7 +80,7 @@ export function PriceSparkline({
               cx={pt.x}
               cy={pt.y}
               r={i === points.length - 1 ? 3 : 1.5}
-              fill={i === points.length - 1 ? strokeColor : "#FFFFFF"}
+              fill={i === points.length - 1 ? strokeColor : "#eae3da"}
               stroke={strokeColor}
               strokeWidth={i === points.length - 1 ? 1.5 : 1}
             />
@@ -100,12 +88,12 @@ export function PriceSparkline({
         </svg>
 
         {showLabels && (
-          <div className="flex items-center justify-between text-[10px] font-mono tabular-nums text-ink-500 pt-1.5 border-t border-paper-border/40">
+          <div className="flex items-center justify-between text-[10px] font-mono tabular-nums text-[#4a4845] pt-1.5 border-t border-[#181715]/20">
             <span>
-              {formatDateLabel(firstPoint.date)}: {formatShortCurrency(firstPoint.price)}
+              {formatFechaCorta(firstPoint.date)}: {formatCurrency(firstPoint.price)}
             </span>
-            <span className="font-semibold text-ink-900">
-              {formatDateLabel(lastPoint.date)}: {formatShortCurrency(lastPoint.price)}
+            <span className="font-bold text-[#141413]">
+              {formatFechaCorta(lastPoint.date)}: {formatCurrency(lastPoint.price)}
             </span>
           </div>
         )}
