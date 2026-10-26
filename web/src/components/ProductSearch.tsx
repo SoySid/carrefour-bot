@@ -71,175 +71,184 @@ export function ProductSearch() {
   };
 
   return (
-    <section className="bg-white rounded-xl border border-paper-border p-5 sm:p-7 shadow-card space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-3">
-        <div>
-          <span className="text-[11px] font-mono uppercase tracking-wider text-carrefour-blue font-bold block mb-1">
-            Buscador en góndola
-          </span>
-          <h2 className="text-lg sm:text-xl font-bold tracking-tight text-ink-900">
-            Consultar producto o marca
-          </h2>
-          <p className="text-xs sm:text-sm text-ink-500">
-            Ingresá cualquier artículo para ver su precio del día y la evolución histórica.
-          </p>
+    <div className="relative mt-8">
+      {/* Pestaña superior */}
+      <div className="inline-block bg-[#dcd4c9] text-[#141413] font-['Oswald'] text-xs sm:text-sm font-semibold tracking-[1.2px] px-3.5 py-1 border-2 border-[#181715] border-b-0 relative z-10 ml-3 shadow-[-2px_-2px_0_rgba(230,223,213,0.4)]">
+        ARCHIVO Y CONSULTA — BUSCADOR EN GÓNDOLA
+      </div>
+
+      <div className="paper-card sketch-frame p-5 sm:p-7 space-y-5">
+        <div className="corner-ticks"></div>
+
+        <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-3">
+          <div>
+            <h2 className="font-['Oswald'] text-xl sm:text-2xl font-bold tracking-[1px] text-[#141413] uppercase">
+              CONSULTAR ARTÍCULO O MARCA
+            </h2>
+            <p className="text-xs sm:text-sm font-mono text-[#4a4845] mt-0.5">
+              Ingresá cualquier producto para ver su precio del día y la curva histórica.
+            </p>
+          </div>
+
+          {/* Accesos rápidos estilo sellos */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] font-mono text-[#55524d] mr-1 font-bold">FRECUENTES:</span>
+            {["Leche", "Aceite", "Yerba", "Arroz", "Fideos", "Café"].map((chip) => (
+              <button
+                key={chip}
+                onClick={() => setQuery(chip)}
+                className="text-xs font-mono font-bold px-2.5 py-1 bg-[#dcd4c8] hover:bg-[#eadca6] border border-[#181715] text-[#141413] transition-colors active:scale-95 shadow-[1px_1px_0_rgba(0,0,0,0.15)]"
+              >
+                {chip}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Accesos rápidos con color y relieve */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[11px] font-mono text-ink-400 mr-1 font-medium">Comunes:</span>
-          {["Leche", "Aceite", "Yerba", "Arroz", "Fideos", "Café"].map((chip) => (
+        {/* Input de búsqueda estilo ficha técnica */}
+        <div className="relative">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#141413] pointer-events-none opacity-70" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar por artículo o marca (ej. La Serenísima, Cocinero, Matarazzo, Marolio)..."
+            className="w-full border-2 border-[#181715] bg-[#dfdad2] py-2.5 pl-10 pr-10 text-sm font-mono font-medium text-[#141413] placeholder-[#6e706e] focus:bg-[#f3eee8] focus:outline-none shadow-[inset_0_1px_3px_rgba(0,0,0,0.15)]"
+          />
+          {query ? (
             <button
-              key={chip}
-              onClick={() => setQuery(chip)}
-              className="text-xs font-mono font-semibold rounded-lg bg-blue-50/70 hover:bg-blue-100/80 border border-blue-200/80 px-2.5 py-1 text-carrefour-blue transition-all active:scale-[0.97]"
+              onClick={() => {
+                setQuery("");
+                setResults([]);
+                setExpandedId(null);
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-[#141413] hover:opacity-70"
+              title="Borrar texto"
             >
-              {chip}
+              <X className="h-4 w-4" />
             </button>
-          ))}
+          ) : loading ? (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              <Loader2 className="h-4 w-4 animate-spin text-[#141413]" />
+            </div>
+          ) : null}
         </div>
-      </div>
 
-      {/* Input de búsqueda estilizado */}
-      <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-carrefour-blue pointer-events-none" />
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar por artículo o marca (ej. La Serenísima, Cocinero, Matarazzo, Marolio)..."
-          className="w-full rounded-xl border-2 border-paper-border/80 bg-slate-50/60 py-3 pl-10 pr-10 text-sm text-ink-900 placeholder-ink-400 focus:bg-white focus:outline-none focus:border-carrefour-blue transition-all shadow-inner"
-        />
-        {query ? (
-          <button
-            onClick={() => {
-              setQuery("");
-              setResults([]);
-              setExpandedId(null);
-            }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-ink-400 hover:text-ink-700"
-            title="Borrar texto"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        ) : loading ? (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            <Loader2 className="h-4 w-4 animate-spin text-carrefour-blue" />
-          </div>
-        ) : null}
-      </div>
+        {/* Listado de resultados */}
+        {results.length > 0 && (
+          <div className="space-y-3 pt-3 border-t border-dashed border-[#7c766e]">
+            <div className="flex items-center justify-between text-xs font-mono font-bold text-[#4a4845]">
+              <span>{results.length} ARTÍCULOS ENCONTRADOS</span>
+              <span className="text-[#a62626]">TOCÁ UN ARTÍCULO PARA VER SU SERIE</span>
+            </div>
 
-      {/* Listado de resultados */}
-      {results.length > 0 && (
-        <div className="space-y-2 pt-2 border-t border-paper-border">
-          <div className="flex items-center justify-between text-xs font-mono text-ink-500">
-            <span>{results.length} coincidencias encontradas</span>
-            <span className="text-carrefour-blue font-semibold">Tocá un artículo para ver su gráfica</span>
-          </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {results.map((prod) => {
+                const isExpanded = expandedId === prod.id;
+                const prodHistory = history[prod.id] || [];
+                const isLoadingThis = loadingHistory === prod.id;
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {results.map((prod) => {
-              const isExpanded = expandedId === prod.id;
-              const prodHistory = history[prod.id] || [];
-              const isLoadingThis = loadingHistory === prod.id;
-
-              return (
-                <div
-                  key={prod.id}
-                  className={`rounded-xl border transition-all ${
-                    isExpanded
-                      ? "bg-blue-50/40 border-carrefour-blue shadow-sm ring-1 ring-carrefour-blue/30"
-                      : "bg-white border-paper-border hover:border-blue-300"
-                  }`}
-                >
+                return (
                   <div
-                    onClick={() => handleToggleExpand(prod)}
-                    className="p-3 cursor-pointer flex items-center justify-between gap-3 select-none"
+                    key={prod.id}
+                    className={`border-2 border-[#181715] transition-all ${
+                      isExpanded
+                        ? "bg-[#f3eee8] shadow-[3px_3px_0_#181715]"
+                        : "bg-[#e8e2d9] hover:bg-[#efe9df]"
+                    }`}
                   >
-                    {/* Imagen de producto si existe */}
-                    {prod.imagenUrl ? (
-                      <div className="h-12 w-12 rounded-lg bg-white border border-paper-border/60 p-1 flex-shrink-0 flex items-center justify-center overflow-hidden shadow-sm">
-                        <img
-                          src={prod.imagenUrl}
-                          alt={prod.nombre}
-                          className="h-full w-full object-contain"
-                          loading="lazy"
-                        />
+                    <div
+                      onClick={() => handleToggleExpand(prod)}
+                      className="p-3 cursor-pointer flex items-center justify-between gap-3 select-none"
+                    >
+                      {prod.imagenUrl ? (
+                        <div className="h-11 w-11 rounded border border-[#181715] bg-white p-0.5 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                          <img
+                            src={prod.imagenUrl}
+                            alt={prod.nombre}
+                            className="max-h-full max-w-full object-contain"
+                            loading="lazy"
+                          />
+                        </div>
+                      ) : null}
+
+                      <div className="min-w-0 flex-1">
+                        <div className="font-['Oswald'] text-[10px] uppercase font-bold tracking-[0.5px] text-[#4a4845]">
+                          {prod.categoria || "GÓNDOLA"}
+                        </div>
+                        <div className="font-['Oswald'] font-bold text-xs sm:text-sm text-[#141413] truncate" title={prod.nombre}>
+                          {prod.nombre}
+                        </div>
                       </div>
-                    ) : (
-                      <div className="h-12 w-12 rounded-lg bg-slate-100 border border-slate-200 flex-shrink-0 flex items-center justify-center text-[10px] font-mono text-ink-400 uppercase">
-                        S/F
+
+                      <div className="text-right flex-shrink-0 font-mono">
+                        <div className="font-black text-sm text-[#141413] tabular-nums">
+                          {formatCurrency(prod.precioActual)}
+                        </div>
+                        <div className="flex items-center justify-end gap-1 mt-0.5">
+                          {prod.varDia !== null ? (
+                            <span
+                              className={`text-[10px] font-bold ${
+                                prod.varDia > 0
+                                  ? "text-[#a62626]"
+                                  : prod.varDia < 0
+                                  ? "text-[#1b7a43]"
+                                  : "text-[#55524d]"
+                              }`}
+                            >
+                              {prod.varDia > 0 ? `+${prod.varDia}%` : `${prod.varDia}%`}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-[#55524d]">0.0%</span>
+                          )}
+                          {isExpanded ? (
+                            <ChevronUp className="h-3 w-3 text-[#141413]" />
+                          ) : (
+                            <ChevronDown className="h-3 w-3 text-[#141413]" />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Evolución desplegable */}
+                    {isExpanded && (
+                      <div className="p-3 border-t border-dashed border-[#7c766e] bg-[#dfdad2]/60 space-y-2">
+                        <div className="flex items-center justify-between text-xs font-mono font-bold">
+                          <span className="text-[#141413]">EVOLUCIÓN EN GÓNDOLA:</span>
+                          {safeExternalUrl(prod.url) && (
+                            <a
+                              href={safeExternalUrl(prod.url)!}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#a62626] hover:underline flex items-center gap-1 text-[11px]"
+                            >
+                              <span>VER EN CARREFOUR</span>
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          )}
+                        </div>
+
+                        {isLoadingThis ? (
+                          <div className="flex items-center justify-center py-4 text-xs font-mono text-[#141413] gap-1.5">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            <span>Cargando serie histórica...</span>
+                          </div>
+                        ) : prodHistory.length > 0 ? (
+                          <PriceSparkline data={prodHistory} height={60} />
+                        ) : (
+                          <div className="text-center py-2 text-xs font-mono text-[#55524d]">
+                            Sin registros históricos anteriores.
+                          </div>
+                        )}
                       </div>
                     )}
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-mono uppercase text-ink-400 truncate font-medium">
-                          {prod.categoria}
-                        </span>
-                        {prod.varDia !== null && prod.varDia !== undefined && prod.varDia !== 0 && (
-                          <span
-                            className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full ${
-                              prod.varDia > 0
-                                ? "bg-red-100 text-carrefour-red"
-                                : "bg-emerald-100 text-emerald-700"
-                            }`}
-                          >
-                            {prod.varDia > 0 ? `+${prod.varDia}%` : `${prod.varDia}%`}
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-xs sm:text-sm font-bold text-ink-900 truncate mt-0.5" title={prod.nombre}>
-                        {prod.nombre}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 flex-shrink-0 font-mono">
-                      <div className="text-right">
-                        <span className="text-sm font-extrabold text-ink-900 tabular-nums">
-                          {formatCurrency(prod.precioActual)}
-                        </span>
-                      </div>
-                      <div className="text-ink-400">
-                        {isExpanded ? <ChevronUp className="h-4 w-4 text-carrefour-blue" /> : <ChevronDown className="h-4 w-4" />}
-                      </div>
-                    </div>
                   </div>
-
-                  {/* Panel expandido con gráfico de curva */}
-                  {isExpanded && (
-                    <div className="border-t border-paper-border bg-white p-3.5 space-y-2 rounded-b-xl">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-mono text-ink-700 font-bold">Curva de precios en góndola</span>
-                        {safeExternalUrl(prod.url) && (
-                          <a
-                            href={safeExternalUrl(prod.url)!}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-carrefour-blue hover:underline text-xs font-mono font-semibold"
-                          >
-                            <span>Ficha en Carrefour</span>
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
-                        )}
-                      </div>
-
-                      {isLoadingThis ? (
-                        <div className="flex items-center justify-center py-4 text-xs font-mono text-ink-500 gap-1.5">
-                          <Loader2 className="h-3.5 w-3.5 animate-spin text-carrefour-blue" />
-                          <span>Consultando base de precios...</span>
-                        </div>
-                      ) : (
-                        <PriceSparkline data={prodHistory} />
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
-    </section>
+        )}
+      </div>
+    </div>
   );
 }
