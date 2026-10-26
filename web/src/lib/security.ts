@@ -5,7 +5,7 @@ export const SearchQuerySchema = z
   .trim()
   .min(2, "La búsqueda debe tener al menos 2 caracteres")
   .max(60, "La búsqueda no puede superar los 60 caracteres")
-  .regex(/^[^<>{}\\[\\]`$\0]+$/, "Caracteres no permitidos en la búsqueda");
+  .regex(/^[^<>{}[\]`$\0]+$/, "Caracteres no permitidos en la búsqueda");
 
 export const ProductIdSchema = z
   .string()

@@ -59,6 +59,7 @@ input, select, textarea, button {
   inset: -5px;
   border: 1.2px solid rgba(230, 223, 213, 0.55);
   pointer-events: none;
+  z-index: 1;
 }
 
 .sketch-frame::after {
@@ -73,6 +74,7 @@ input, select, textarea, button {
   pointer-events: none;
   border-left: 1.5px solid rgba(230, 223, 213, 0.5);
   border-right: 1.5px solid rgba(230, 223, 213, 0.5);
+  z-index: 1;
 }
 
 @media (min-width: 640px) {
