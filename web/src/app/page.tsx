@@ -37,10 +37,25 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-paper-100 text-ink-900 selection:bg-carrefour-blue/15 selection:text-carrefour-blue">
-      <Header fechaHoy={data.stats.fechaHoy} />
+    <div className="min-h-[100dvh] flex flex-col bg-[#090a0c] text-[#e6dfd5] selection:bg-[#a62626]/30 selection:text-[#e6dfd5] relative overflow-x-hidden font-mono">
+      {/* Textura de fondo y viñeta sutil */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0"
+        style={{
+          background:
+            "radial-gradient(circle at 15% 20%, rgba(45, 48, 52, 0.35) 0%, transparent 45%), radial-gradient(circle at 85% 30%, rgba(35, 38, 42, 0.3) 0%, transparent 50%), radial-gradient(circle at 50% 80%, rgba(40, 42, 46, 0.35) 0%, transparent 55%), linear-gradient(135deg, #070809 0%, #121417 50%, #060708 100%)",
+        }}
+      />
+      <div
+        className="fixed inset-0 pointer-events-none z-0"
+        style={{
+          background: "radial-gradient(circle at center, transparent 55%, rgba(0,0,0,0.85) 100%)",
+        }}
+      />
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6 space-y-8 pt-6 sm:pt-8 pb-12">
+      <div className="relative z-10 w-full max-w-[1240px] mx-auto px-4 sm:px-8 py-6 flex-1 flex flex-col space-y-8">
+        <Header fechaHoy={data.stats.fechaHoy} />
+
         {/* Portada Macro Editorial + Ticket Changuito */}
         <HeroStats stats={data.stats} changuito={data.changuito} />
 
@@ -56,17 +71,17 @@ export default async function HomePage() {
 
         {/* Metodología */}
         <Methodology />
-      </main>
+      </div>
 
-      <footer className="border-t border-paper-border bg-paper-200/50 py-8 text-xs text-ink-500 font-mono">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <footer className="relative z-10 border-t border-[#e6dfd5]/20 bg-black/40 py-6 text-xs text-[#b8b0a6] font-mono">
+        <div className="max-w-[1240px] mx-auto px-4 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p>© {new Date().getFullYear()} Carrefour Tracker • Relevamiento diario de precios con fines informativos y de transparencia.</p>
           <div className="flex items-center gap-6">
             <a
               href="https://github.com/sidarg/carrefour-bot"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-ink-900 transition-colors"
+              className="hover:text-[#e6dfd5] transition-colors"
             >
               GitHub
             </a>
@@ -74,7 +89,7 @@ export default async function HomePage() {
               href="https://t.me/carrefour_monitor_bot"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-ink-900 transition-colors"
+              className="hover:text-[#e6dfd5] transition-colors"
             >
               Canal en Telegram
             </a>

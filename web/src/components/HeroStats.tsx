@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { DailyStats, ChanguitoItem, PricePoint } from "@/lib/types";
-import { ShoppingBag, ArrowUpRight, ArrowDownRight, Minus, ChevronRight, Loader2, ExternalLink, Sparkles } from "lucide-react";
+import { ShoppingBag, Loader2, ExternalLink } from "lucide-react";
 import { PriceSparkline } from "./PriceSparkline";
 import { safeExternalUrl } from "@/lib/security";
 
@@ -16,10 +16,14 @@ export function HeroStats({ stats, changuito = [] }: HeroStatsProps) {
   const [history, setHistory] = useState<PricePoint[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
-  const totalMovs = (stats.subieronDia || 0) + (stats.bajaronDia || 0) + (stats.igualesDia || 0) || 1;
-  const pctSubieron = ((stats.subieronDia || 0) / totalMovs) * 100;
-  const pctBajaron = ((stats.bajaronDia || 0) / totalMovs) * 100;
-  const pctEstables = ((stats.igualesDia || 0) / totalMovs) * 100;
+  const subieron = stats.subieronDia || 0;
+  const bajaron = stats.bajaronDia || 0;
+  const estables = stats.igualesDia || 0;
+  const totalMovs = subieron + bajaron + estables || 1;
+
+  const pctSubieron = ((subieron / totalMovs) * 100);
+  const pctBajaron = ((bajaron / totalMovs) * 100);
+  const pctEstables = ((estables / totalMovs) * 100);
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat("es-AR", {
@@ -31,9 +35,10 @@ export function HeroStats({ stats, changuito = [] }: HeroStatsProps) {
 
   const totalChanguitoHoy = changuito.reduce((acc, it) => acc + (it.precioHoy || 0), 0);
   const totalChanguitoAyer = changuito.reduce((acc, it) => acc + (it.precioAyer || 0), 0);
-  const varChanguito = totalChanguitoAyer > 0
-    ? (((totalChanguitoHoy - totalChanguitoAyer) / totalChanguitoAyer) * 100).toFixed(1)
-    : "0.0";
+  const varChanguito =
+    totalChanguitoAyer > 0
+      ? (((totalChanguitoHoy - totalChanguitoAyer) / totalChanguitoAyer) * 100).toFixed(1)
+      : "0.0";
 
   const handleSelectChanguitoItem = async (it: ChanguitoItem) => {
     if (selectedItem?.id === it.id) {
@@ -56,237 +61,259 @@ export function HeroStats({ stats, changuito = [] }: HeroStatsProps) {
   };
 
   return (
-    <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-      {/* Columna Izquierda: Gran Índice Editorial */}
-      <div className="lg:col-span-7 bg-white rounded-xl border border-paper-border p-5 sm:p-7 shadow-card space-y-6">
-        <div>
-          <div className="inline-flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider font-bold text-carrefour-blue bg-blue-50 border border-blue-100 px-2 py-0.5 rounded mb-2">
-            <span>Índice Ponderado de Consumo</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink-900 leading-snug">
-            Variación de precios en góndola
-          </h1>
-          <p className="text-xs sm:text-sm text-ink-500 mt-1">
-            Calculado diariamente sobre {stats.totalMonitoreados.toLocaleString("es-AR")} artículos relevados en tiempo real.
-          </p>
-        </div>
+    <div className="relative text-[#e6dfd5] font-mono">
+      {/* SVG Filters para texturas grunge y de borde */}
+      <svg width="0" height="0" className="absolute pointer-events-none">
+        <filter id="rough-edge">
+          <feTurbulence type="turbulence" baseFrequency="0.08" numOctaves="2" result="turbulence" />
+          <feDisplacementMap in2="turbulence" in="SourceGraphic" scale="4" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </svg>
 
-        {/* Dos grandes métricas tipo tarjeta coloreada */}
-        <div className="grid grid-cols-2 gap-4">
-          {/* Variación 24h Card */}
-          <div className="rounded-xl bg-gradient-to-br from-red-50/70 to-red-50/20 border border-red-100 p-4 sm:p-5">
-            <span className="text-[11px] font-mono font-semibold text-red-800 uppercase tracking-wide block">
-              Variación 24h
-            </span>
-            <div className="flex items-baseline gap-2 mt-1">
-              <span
-                className={`text-3xl sm:text-4xl font-extrabold font-mono tabular-nums tracking-tight ${
+      {/* Título de Sección Principal */}
+      <div className="mb-6">
+        <h1 className="font-['Oswald'] text-3xl sm:text-5xl lg:text-[3.2rem] font-bold tracking-[2px] leading-[1.05] text-[#e6dfd5] uppercase drop-shadow-[2px_3px_0px_rgba(0,0,0,0.85)]">
+          VARIACIÓN DE PRECIOS EN GÓNDOLA
+        </h1>
+      </div>
+
+      {/* Grid de Contenido Principal */}
+      <section className="grid grid-cols-1 lg:grid-cols-[1.52fr_1fr] gap-8 lg:gap-10 items-start relative">
+        {/* COLUMNA IZQUIERDA */}
+        <div className="space-y-7">
+          {/* Bloque Resumen - Índice Ponderado de Consumo */}
+          <div className="relative mt-2">
+            <div className="inline-block bg-[#dcd4c9] text-[#141413] font-['Oswald'] text-xs sm:text-sm font-semibold tracking-[1.2px] px-3.5 py-1 border-2 border-[#181715] border-b-0 relative z-10 ml-3 shadow-[-2px_-2px_0_rgba(230,223,213,0.4)]">
+              RESUMEN — ÍNDICE PONDERADO DE CONSUMO
+            </div>
+
+            <div className="paper-card sketch-frame p-4 sm:p-6 z-0">
+              <div className="corner-ticks"></div>
+              <div className="font-['Oswald'] text-lg sm:text-[1.38rem] font-semibold tracking-[1px] text-[#141413] uppercase mb-3.5">
+                COMPORTAMIENTO DEL CATÁLOGO • {stats.totalMonitoreados.toLocaleString("es-AR")} ARTÍCULOS COMPARABLES
+              </div>
+
+              {/* Barra segmentada funcional con proporciones reales */}
+              <div className="w-full h-[29px] border-2 border-[#252422] rounded-2xl bg-[#dfdad2] relative overflow-hidden flex items-center mb-3.5 shadow-[inset_0_1px_3px_rgba(0,0,0,0.25)]">
+                <span className="text-[#a62626] font-extrabold text-lg pl-2 pr-1 z-10 leading-none select-none">
+                  →
+                </span>
+                <div className="flex-1 h-full flex rounded-r-xl overflow-hidden">
+                  <div
+                    style={{ width: `${Math.max(pctSubieron, subieron > 0 ? 3 : 0)}%` }}
+                    className="bg-[#a62626] h-full transition-all duration-300"
+                    title={`${subieron} subieron (${pctSubieron.toFixed(1)}%)`}
+                  />
+                  <div
+                    style={{ width: `${Math.max(pctBajaron, bajaron > 0 ? 3 : 0)}%` }}
+                    className="bg-[#1b7a43] h-full transition-all duration-300"
+                    title={`${bajaron} bajaron (${pctBajaron.toFixed(1)}%)`}
+                  />
+                  <div
+                    style={{ width: `${pctEstables}%` }}
+                    className="bg-[#6e706e] h-full transition-all duration-300 opacity-90"
+                    title={`${estables} estables (${pctEstables.toFixed(1)}%)`}
+                  />
+                </div>
+              </div>
+
+              {/* Leyenda de estadísticas */}
+              <div className="flex flex-wrap sm:flex-nowrap items-center justify-between text-xs sm:text-[0.93rem] font-bold text-[#141413] pt-0.5 gap-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#a62626] inline-block flex-shrink-0" />
+                  <span>• {subieron} SUBIERON ({pctSubieron.toFixed(1)}%)</span>
+                </div>
+                <div className="hidden sm:block w-[1.5px] h-5 bg-[#55524d]" />
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#1b7a43] inline-block flex-shrink-0" />
+                  <span>• {bajaron} BAJARON ({pctBajaron.toFixed(1)}%)</span>
+                </div>
+                <div className="hidden sm:block w-[1.5px] h-5 bg-[#55524d]" />
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#6e706e] inline-block flex-shrink-0" />
+                  <span>• {estables} ESTABLES ({pctEstables.toFixed(1)}%)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Fila de 2 tarjetas inferiores (KPIs) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 relative">
+            {/* Tarjeta Variación 24H */}
+            <div className="paper-card sketch-frame p-4 sm:p-5 min-h-[160px] flex flex-col justify-start relative">
+              <div className="corner-ticks"></div>
+              <div className="font-['Oswald'] text-lg sm:text-[1.32rem] font-medium tracking-[0.8px] text-[#141413] mb-2 sm:mb-3 flex items-center gap-2.5 uppercase">
+                <span>VARIACIÓN 24H</span>
+                <span className="w-6 h-[2px] bg-[#141413] inline-block" />
+              </div>
+              <div
+                className={`font-mono text-4xl sm:text-5xl font-extrabold tracking-[-2px] leading-none mt-1 ${
                   stats.varDiaGeneral > 0
-                    ? "text-carrefour-red"
+                    ? "text-[#a62626]"
                     : stats.varDiaGeneral < 0
-                    ? "text-emerald-700"
-                    : "text-ink-900"
+                    ? "text-[#1b7a43]"
+                    : "text-[#141413]"
                 }`}
               >
                 {stats.varDiaGeneral > 0 ? `+${stats.varDiaGeneral.toFixed(2)}%` : `${stats.varDiaGeneral.toFixed(2)}%`}
-              </span>
+              </div>
+              <div className="text-[11px] font-mono text-[#55524d] mt-2">
+                Respecto al corte anterior
+              </div>
+              <div className="absolute bottom-1 right-1.5 w-7 h-7 border-r-2 border-b-2 border-[#222] -skew-x-12 opacity-60 pointer-events-none" />
             </div>
-            <span className="text-[11px] text-red-700/80 font-medium block mt-1">
-              Respecto al corte anterior
-            </span>
-          </div>
 
-          {/* Variación Mes Card */}
-          <div className="rounded-xl bg-gradient-to-br from-blue-50/70 to-blue-50/20 border border-blue-100 p-4 sm:p-5">
-            <span className="text-[11px] font-mono font-semibold text-blue-800 uppercase tracking-wide block">
-              Acumulado del mes
-            </span>
-            <div className="flex items-baseline gap-2 mt-1">
-              <span
-                className={`text-3xl sm:text-4xl font-extrabold font-mono tabular-nums tracking-tight ${
+            {/* Tarjeta Acumulado del Mes */}
+            <div className="paper-card sketch-frame p-4 sm:p-5 min-h-[160px] flex flex-col justify-start relative">
+              <div className="corner-ticks"></div>
+              <div className="font-['Oswald'] text-lg sm:text-[1.32rem] font-medium tracking-[0.8px] text-[#141413] mb-2 sm:mb-3 flex items-center gap-2.5 uppercase">
+                <span>ACUMULADO DEL MES</span>
+                <span className="w-6 h-[2px] bg-[#141413] inline-block" />
+              </div>
+              <div
+                className={`font-mono text-4xl sm:text-5xl font-extrabold tracking-[-2px] leading-none mt-1 ${
                   stats.varMesGeneral > 0
-                    ? "text-carrefour-blue"
+                    ? "text-[#a62626]"
                     : stats.varMesGeneral < 0
-                    ? "text-emerald-700"
-                    : "text-ink-900"
+                    ? "text-[#1b7a43]"
+                    : "text-[#141413]"
                 }`}
               >
                 {stats.varMesGeneral > 0 ? `+${stats.varMesGeneral.toFixed(2)}%` : `${stats.varMesGeneral.toFixed(2)}%`}
-              </span>
+              </div>
+              <div className="text-[11px] font-mono text-[#55524d] mt-2">
+                Inflación mes corriente
+              </div>
+              <div className="absolute bottom-1 right-1.5 w-7 h-7 border-r-2 border-b-2 border-[#222] -skew-x-12 opacity-60 pointer-events-none" />
             </div>
-            <span className="text-[11px] text-blue-700/80 font-medium block mt-1">
-              Inflación mes corriente
-            </span>
+
+            {/* Flechas de tiza hacia el Ticket en pantallas desktop */}
+            <svg
+              className="hidden lg:block absolute -right-9 top-1/2 -translate-y-1/2 w-12 h-28 pointer-events-none z-20"
+              viewBox="0 0 60 120"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path d="M5 20 C 20 15, 35 12, 52 10" stroke="#c8c2b8" strokeWidth="1.6" strokeLinecap="round" />
+              <path d="M45 5 L 53 10 L 44 15" stroke="#c8c2b8" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M55 70 C 42 82, 28 90, 8 94" stroke="#c8c2b8" strokeWidth="1.6" strokeLinecap="round" />
+              <path d="M16 88 L 7 94 L 17 98" stroke="#c8c2b8" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </div>
         </div>
 
-        {/* Barra de dispersión */}
-        <div className="space-y-2.5 pt-1">
-          <div className="flex items-center justify-between text-xs font-mono">
-            <span className="text-ink-700 font-semibold">Comportamiento del catálogo</span>
-            <span className="text-ink-500 text-[11px] tabular-nums font-medium">
-              {stats.conVarDia.toLocaleString("es-AR")} artículos comparables
-            </span>
-          </div>
+        {/* COLUMNA DERECHA: TICKET RECIBO */}
+        <div className="relative filter drop-shadow-[8px_12px_18px_rgba(0,0,0,0.85)]">
+          <div className="ticket-clipped p-5 sm:p-6 text-[#141413] space-y-2">
+            <div className="text-center font-['Oswald'] text-xs font-bold tracking-[1.5px] text-[#2b2927]">
+              TICKET
+            </div>
 
-          <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden flex border border-paper-border/60">
-            <div
-              style={{ width: `${Math.max(pctSubieron, stats.subieronDia > 0 ? 3 : 0)}%` }}
-              className="bg-carrefour-red transition-all"
-              title={`${stats.subieronDia} subieron`}
-            />
-            <div
-              style={{ width: `${Math.max(pctBajaron, stats.bajaronDia > 0 ? 3 : 0)}%` }}
-              className="bg-emerald-500 transition-all"
-              title={`${stats.bajaronDia} bajaron`}
-            />
-            <div
-              style={{ width: `${pctEstables}%` }}
-              className="bg-slate-300 transition-all"
-              title={`${stats.igualesDia} sin cambios`}
-            />
-          </div>
+            <div className="flex justify-center mb-2">
+              <div className="bg-[#eadca6] border-[1.5px] border-[#4a4538] rounded-md px-3 py-0.5 inline-flex items-center gap-1.5 font-['Oswald'] text-sm font-bold tracking-[0.8px] text-[#141413] shadow-[1px_1px_0_rgba(0,0,0,0.2)]">
+                <ShoppingBag className="w-3.5 h-3.5" />
+                <span>CHANGUITO BÁSICO</span>
+              </div>
+            </div>
 
-          <div className="flex items-center justify-between text-[11px] font-mono tabular-nums pt-0.5">
-            <span className="text-carrefour-red font-bold inline-flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-carrefour-red" />
-              +{stats.subieronDia} subieron ({pctSubieron.toFixed(1)}%)
-            </span>
-            <span className="text-emerald-700 font-bold inline-flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              -{stats.bajaronDia} bajaron ({pctBajaron.toFixed(1)}%)
-            </span>
-            <span className="text-slate-500 font-medium">
-              {stats.igualesDia} estables ({pctEstables.toFixed(1)}%)
-            </span>
-          </div>
-        </div>
-      </div>
+            <div className="text-center font-['Oswald'] text-xs font-semibold tracking-[0.6px] text-[#2c2a28] leading-tight uppercase">
+              {changuito.length} ARTÍCULOS INDISPENSABLES DE PRIMERAS MARCAS<br />
+              — TOTAL {formatCurrency(totalChanguitoHoy)}
+            </div>
 
-      {/* Columna Derecha: El Ticket del Changuito con borde de acento */}
-      <div className="lg:col-span-5 bg-gradient-to-b from-white to-amber-50/20 rounded-xl border border-amber-200/80 p-5 sm:p-6 shadow-ticket space-y-4 relative overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 via-carrefour-blue to-carrefour-red" />
+            <div className="border-b-[1.5px] border-dashed border-[#7c766e] my-2" />
 
-        {/* Cabecera del ticket */}
-        <div className="text-center border-b border-paper-border pb-3">
-          <div className="inline-flex items-center justify-center gap-1.5 text-xs font-mono uppercase tracking-wider text-amber-900 font-extrabold bg-amber-100/70 px-2.5 py-0.5 rounded-full border border-amber-200">
-            <ShoppingBag className="h-3.5 w-3.5 text-amber-800" />
-            <span>Ticket Changuito Básico</span>
-          </div>
-          <p className="text-[11px] text-ink-500 mt-1">
-            6 artículos indispensables de primeras marcas
-          </p>
-        </div>
-
-        {/* Lista de productos del ticket */}
-        <div className="divide-y divide-paper-border/60 text-xs">
-          {changuito.map((it) => {
-            const isSelected = selectedItem?.id === it.id;
-            return (
-              <div
-                key={it.id}
-                onClick={() => handleSelectChanguitoItem(it)}
-                className={`py-2 px-2 flex items-center justify-between gap-3 cursor-pointer rounded-lg transition-all ${
-                  isSelected
-                    ? "bg-blue-50/70 border border-blue-200 shadow-sm"
-                    : "hover:bg-amber-50/50"
-                }`}
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-mono uppercase text-ink-400 font-medium">
-                      {it.categoria}
-                    </span>
-                    {it.varDia !== 0 && (
-                      <span
-                        className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full ${
-                          it.varDia > 0
-                            ? "bg-red-100 text-carrefour-red"
-                            : "bg-emerald-100 text-emerald-700"
-                        }`}
-                      >
-                        {it.varDia > 0 ? `+${it.varDia}%` : `${it.varDia}%`}
-                      </span>
-                    )}
-                  </div>
-                  <div className="font-semibold text-ink-900 truncate mt-0.5" title={it.nombre}>
-                    {it.nombre}
-                  </div>
-                </div>
-
-                <div className="text-right flex-shrink-0 font-mono">
-                  <div className="font-extrabold text-ink-900 tabular-nums">
-                    {formatCurrency(it.precioHoy)}
-                  </div>
-                  {it.precioAyer > 0 && it.precioAyer !== it.precioHoy && (
-                    <div className="text-[10px] text-ink-400 line-through tabular-nums">
-                      {formatCurrency(it.precioAyer)}
+            {/* Listado dinámico de ítems del Ticket */}
+            <div className="space-y-2.5">
+              {changuito.map((it) => {
+                const isSelected = selectedItem?.id === it.id;
+                return (
+                  <div
+                    key={it.id}
+                    onClick={() => handleSelectChanguitoItem(it)}
+                    className={`cursor-pointer p-1.5 rounded transition-colors group ${
+                      isSelected ? "bg-black/10 ring-1 ring-[#141413]" : "hover:bg-black/5"
+                    }`}
+                  >
+                    <div className="font-['Oswald'] text-[11px] font-bold text-[#3a3734] tracking-[0.5px] uppercase">
+                      {it.categoria || "ALMACÉN"} —
                     </div>
+                    <div className="flex justify-between items-baseline font-['Oswald'] font-bold text-xs sm:text-[13px] tracking-[0.4px] text-[#161514]">
+                      <span className="truncate pr-2 group-hover:underline" title={it.nombre}>
+                        {it.nombre}
+                      </span>
+                      <span className="font-mono font-extrabold text-xs whitespace-nowrap">
+                        {formatCurrency(it.precioHoy)}
+                      </span>
+                    </div>
+                    <div className="flex items-baseline font-mono text-[11px] font-bold text-[#2c2a28] mt-0.5">
+                      {it.varDia !== 0 ? (
+                        <span
+                          className={it.varDia > 0 ? "text-[#a62626]" : "text-[#1b7a43]"}
+                        >
+                          {it.varDia > 0 ? `+${it.varDia}%` : `${it.varDia}%`}
+                        </span>
+                      ) : (
+                        <span>VAR 0.0%</span>
+                      )}
+                      <span className="flex-1 border-b-[1.5px] border-dotted border-[#5c5750] mx-1.5 relative -top-[3px]" />
+                      {it.precioAyer > 0 && it.precioAyer !== it.precioHoy && (
+                        <span className="line-through opacity-60 text-[10px]">
+                          {formatCurrency(it.precioAyer)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Evolución histórica desplegable si se selecciona un ítem */}
+            {selectedItem && (
+              <div className="mt-3 p-3 bg-white/70 border border-[#141413] rounded text-xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold truncate pr-2 text-[#141413]">
+                    Historial: {selectedItem.nombre}
+                  </span>
+                  {safeExternalUrl(selectedItem.url) && (
+                    <a
+                      href={safeExternalUrl(selectedItem.url)!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#a62626] hover:underline flex items-center gap-1 font-mono font-bold text-[11px] flex-shrink-0"
+                    >
+                      <span>Ver góndola</span>
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
                   )}
                 </div>
+                {loadingHistory ? (
+                  <div className="flex items-center justify-center py-3 text-[#141413] gap-1.5 font-mono text-xs">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span>Cargando serie...</span>
+                  </div>
+                ) : (
+                  <PriceSparkline data={history} height={44} />
+                )}
               </div>
-            );
-          })}
-        </div>
-
-        {/* Panel desplegable de evolución */}
-        {selectedItem && (
-          <div className="border border-blue-200 rounded-lg bg-white p-3.5 space-y-2 text-xs shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-ink-900 truncate pr-2 text-xs">
-                Curva: {selectedItem.nombre}
-              </span>
-              {safeExternalUrl(selectedItem.url) && (
-                <a
-                  href={safeExternalUrl(selectedItem.url)!}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-carrefour-blue hover:underline flex items-center gap-1 text-[11px] font-mono font-semibold flex-shrink-0"
-                >
-                  <span>Góndola</span>
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              )}
-            </div>
-
-            {loadingHistory ? (
-              <div className="flex items-center justify-center py-4 text-xs text-ink-500 gap-1.5 font-mono">
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-carrefour-blue" />
-                <span>Cargando serie histórica...</span>
-              </div>
-            ) : (
-              <PriceSparkline data={history} height={48} />
             )}
-          </div>
-        )}
 
-        {/* Total del ticket */}
-        <div className="border-t-2 border-dashed border-paper-border pt-3.5 flex items-baseline justify-between bg-white/50 p-2.5 rounded-lg border border-paper-border/60">
-          <div>
-            <span className="text-[11px] font-mono uppercase tracking-wider text-ink-500 font-bold block">
-              Total Changuito
-            </span>
-            <span className="text-[11px] text-ink-500">6 primeras marcas</span>
-          </div>
-
-          <div className="text-right">
-            <div className="text-2xl font-black font-mono text-ink-900 tabular-nums">
-              {formatCurrency(totalChanguitoHoy)}
-            </div>
-            <div
-              className={`text-xs font-mono font-bold tabular-nums ${
-                Number(varChanguito) > 0
-                  ? "text-carrefour-red"
-                  : Number(varChanguito) < 0
-                  ? "text-emerald-700"
-                  : "text-ink-500"
-              }`}
-            >
-              {Number(varChanguito) > 0 ? `+${varChanguito}% vs ayer` : `${varChanguito}% vs ayer`}
+            {/* Total del Ticket */}
+            <div className="mt-3 pt-2 border-t-[1.5px] border-dashed border-[#7c766e]">
+              <div className="flex items-baseline justify-between font-['Oswald'] text-sm sm:text-base font-bold tracking-[0.6px] text-[#111] mb-1">
+                <span>TOTAL CHANGUITO</span>
+                <span className="flex-1 border-b-[1.5px] border-dotted border-[#5c5750] mx-2 relative -top-[3px]" />
+                <span className="font-mono font-extrabold text-sm sm:text-base">
+                  {formatCurrency(totalChanguitoHoy)}
+                </span>
+              </div>
+              <div className="text-[11px] font-bold tracking-[0.5px] text-[#2b2927] uppercase">
+                {Number(varChanguito) > 0 ? `+${varChanguito}%` : `${varChanguito}%`} VS AYER • {changuito.length} PRIMERAS MARCAS
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }

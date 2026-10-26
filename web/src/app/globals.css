@@ -28,6 +28,68 @@ input, select, textarea, button {
   touch-action: manipulation;
 }
 
+/* ================= Estética Editorial Grunge / Dark Paper ================= */
+:root {
+  --paper-bg-dark: #090a0c;
+  --paper-light: #e6dfd5;
+  --paper-mid: #d8d0c5;
+  --paper-ink: #141413;
+  --ink-muted: #4a4845;
+  --paper-red: #a62626;
+  --paper-green: #1b7a43;
+  --paper-grey: #6e706e;
+  --badge-yellow: #eadca6;
+}
+
+.paper-card {
+  background-color: var(--paper-light);
+  background-image: 
+    radial-gradient(rgba(0,0,0,0.04) 1px, transparent 0),
+    linear-gradient(180deg, #eae3da 0%, #dcd4c8 100%);
+  background-size: 16px 16px, 100% 100%;
+  color: var(--paper-ink);
+  position: relative;
+  box-shadow: 6px 8px 20px rgba(0, 0, 0, 0.75);
+  border: 2px solid #181715;
+}
+
+.sketch-frame::before,
+.sketch-frame::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border: 1.2px solid rgba(230, 223, 213, 0.55);
+  pointer-events: none;
+}
+
+.sketch-frame::after {
+  inset: -3px;
+  border-color: rgba(20, 20, 19, 0.75);
+  transform: rotate(-0.35deg);
+}
+
+.corner-ticks {
+  position: absolute;
+  inset: -9px;
+  pointer-events: none;
+  border-left: 1.5px solid rgba(230, 223, 213, 0.5);
+  border-right: 1.5px solid rgba(230, 223, 213, 0.5);
+}
+
+.ticket-clipped {
+  background: 
+    radial-gradient(circle at 80% 25%, rgba(180, 168, 150, 0.25) 0%, transparent 50%),
+    radial-gradient(circle at 20% 75%, rgba(165, 153, 136, 0.3) 0%, transparent 55%),
+    linear-gradient(180deg, #e8e2d9 0%, #ded7cd 50%, #e4ded4 100%);
+  color: var(--paper-ink);
+  clip-path: polygon(
+    0% 1%, 3% 0%, 6% 1.2%, 10% 0.2%, 14% 1%, 18% 0%, 22% 1.1%, 26% 0.1%, 30% 1.3%, 35% 0.2%, 39% 1%, 43% 0%, 48% 1.2%, 52% 0.2%, 57% 1.1%, 61% 0.1%, 65% 1.3%, 70% 0.2%, 74% 1%, 79% 0%, 83% 1.2%, 88% 0.3%, 92% 1.1%, 96% 0.1%, 100% 1%,
+    99.5% 15%, 100% 30%, 99.2% 48%, 100% 65%, 99.4% 82%, 100% 99%,
+    96% 99.8%, 92% 98.8%, 87% 100%, 83% 99%, 78% 99.8%, 74% 98.9%, 69% 99.9%, 65% 99%, 60% 99.8%, 55% 98.8%, 50% 100%, 46% 99%, 41% 99.9%, 36% 98.9%, 32% 99.8%, 27% 99%, 22% 100%, 18% 98.9%, 13% 99.8%, 9% 99%, 4% 99.9%, 0% 99%,
+    0.6% 80%, 0% 60%, 0.7% 40%, 0.1% 20%
+  );
+}
+
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar {
     display: none;

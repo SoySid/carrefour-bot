@@ -12,6 +12,8 @@ const config: Config = {
         serif: ["'Newsreader'", "Georgia", "serif"],
         sans: ["'Bricolage Grotesque'", "system-ui", "-apple-system", "sans-serif"],
         mono: ["'JetBrains Mono'", "monospace"],
+        anton: ["'Anton'", "sans-serif"],
+        oswald: ["'Oswald'", "sans-serif"],
       },
       colors: {
         paper: {
