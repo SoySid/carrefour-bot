@@ -3,20 +3,20 @@
 @tailwind utilities;
 
 :root {
-  --background: #0d0f12;
-  --foreground: #f8fafc;
+  --background: #F6F4EF;
+  --foreground: #121211;
 }
 
 html {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
-  color: #f8fafc;
-  background-color: #0d0f12;
-  font-size: 16px;
+  color: #121211;
+  background-color: #F6F4EF;
+  font-size: 15px;
   line-height: 1.5;
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  font-family: 'Bricolage Grotesque', system-ui, -apple-system, sans-serif;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum";
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
@@ -28,56 +28,12 @@ input, select, textarea, button {
   touch-action: manipulation;
 }
 
-.bg-dot-grid {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: 24px 24px;
-}
-
-.delay-75 { animation-delay: 75ms; }
-.delay-150 { animation-delay: 150ms; }
-.delay-225 { animation-delay: 225ms; }
-.delay-300 { animation-delay: 300ms; }
-.delay-375 { animation-delay: 375ms; }
-
-@keyframes enterUp {
-  0% {
-    opacity: 0.05;
-    transform: translateY(16px);
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
-}
-
-.animate-enter {
-  animation: enterUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-enter,
-  .animate-fade-in-up,
-  .animate-fade-in {
-    animation: none !important;
-    transform: none !important;
-  }
-}
-
-/* Scroll horizontal con snap para móvil */
-.snap-scroll {
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-}
-
-.snap-scroll > * {
-  scroll-snap-align: start;
-}
-
-/* Ocultar barra de scroll pero mantener funcionalidad */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
 }

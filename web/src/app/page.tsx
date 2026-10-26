@@ -3,8 +3,7 @@ import { getDashboardData } from "@/lib/queries";
 import { Header } from "@/components/Header";
 import { HeroStats } from "@/components/HeroStats";
 import { ProductSearch } from "@/components/ProductSearch";
-import { CategoryBreakdown } from "@/components/CategoryBreakdown";
-import { TopMovers } from "@/components/TopMovers";
+import { CategoryAndMovers } from "@/components/CategoryAndMovers";
 import { Methodology } from "@/components/Methodology";
 import { DashboardData } from "@/lib/types";
 
@@ -38,26 +37,46 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-surface-50 text-slate-100 relative selection:bg-brand-500/20 selection:text-white">
+    <div className="min-h-[100dvh] flex flex-col bg-paper-100 text-ink-900 selection:bg-carrefour-blue/15 selection:text-carrefour-blue">
       <Header fechaHoy={data.stats.fechaHoy} />
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6 space-y-8 pt-6 pb-12">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6 space-y-8 pt-6 sm:pt-8 pb-12">
+        {/* Portada Macro Editorial + Ticket Changuito */}
         <HeroStats stats={data.stats} changuito={data.changuito} />
+
+        {/* Buscador Interactivo con fotos e historial SVG */}
         <ProductSearch />
-        <CategoryBreakdown categorias={data.categorias} />
-        <TopMovers topSubas={data.topSubas} topBajas={data.topBajas} />
+
+        {/* Radar de Góndola: Rubros y Movimientos en Tabs */}
+        <CategoryAndMovers
+          categorias={data.categorias}
+          topSubas={data.topSubas}
+          topBajas={data.topBajas}
+        />
+
+        {/* Metodología */}
         <Methodology />
       </main>
 
-      <footer className="mt-12 border-t border-surface-border bg-surface-100/60 py-6 text-xs text-slate-400">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p>© {new Date().getFullYear()} Carrefour Tracker • Observatorio independiente de precios de góndola.</p>
-          <div className="flex items-center gap-5">
-            <a href="https://github.com/sidarg/carrefour-bot" target="_blank" rel="noopener noreferrer" className="hover:text-slate-200 transition-colors">
+      <footer className="border-t border-paper-border bg-paper-200/50 py-8 text-xs text-ink-500 font-mono">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p>© {new Date().getFullYear()} Carrefour Tracker • Relevamiento diario de precios con fines informativos y de transparencia.</p>
+          <div className="flex items-center gap-6">
+            <a
+              href="https://github.com/sidarg/carrefour-bot"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-ink-900 transition-colors"
+            >
               GitHub
             </a>
-            <a href="https://t.me/carrefour_monitor_bot" target="_blank" rel="noopener noreferrer" className="hover:text-slate-200 transition-colors">
-              Telegram
+            <a
+              href="https://t.me/carrefour_monitor_bot"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-ink-900 transition-colors"
+            >
+              Canal en Telegram
             </a>
           </div>
         </div>
