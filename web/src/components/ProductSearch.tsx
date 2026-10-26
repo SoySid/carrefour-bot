@@ -71,25 +71,28 @@ export function ProductSearch() {
   };
 
   return (
-    <section className="bg-white rounded-lg border border-paper-border p-5 sm:p-7 shadow-card space-y-4">
+    <section className="bg-white rounded-xl border border-paper-border p-5 sm:p-7 shadow-card space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-3">
         <div>
+          <span className="text-[11px] font-mono uppercase tracking-wider text-carrefour-blue font-bold block mb-1">
+            Buscador en góndola
+          </span>
           <h2 className="text-lg sm:text-xl font-bold tracking-tight text-ink-900">
             Consultar producto o marca
           </h2>
           <p className="text-xs sm:text-sm text-ink-500">
-            Ingresá el nombre de cualquier artículo para ver su precio de hoy y la curva histórica.
+            Ingresá cualquier artículo para ver su precio del día y la evolución histórica.
           </p>
         </div>
 
-        {/* Accesos rápidos */}
+        {/* Accesos rápidos con color y relieve */}
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[11px] font-mono text-ink-400 mr-1">Comunes:</span>
+          <span className="text-[11px] font-mono text-ink-400 mr-1 font-medium">Comunes:</span>
           {["Leche", "Aceite", "Yerba", "Arroz", "Fideos", "Café"].map((chip) => (
             <button
               key={chip}
               onClick={() => setQuery(chip)}
-              className="text-xs font-mono rounded bg-paper-100 hover:bg-paper-200 border border-paper-border px-2 py-0.5 text-ink-700 transition-colors"
+              className="text-xs font-mono font-semibold rounded-lg bg-blue-50/70 hover:bg-blue-100/80 border border-blue-200/80 px-2.5 py-1 text-carrefour-blue transition-all active:scale-[0.97]"
             >
               {chip}
             </button>
@@ -97,15 +100,15 @@ export function ProductSearch() {
         </div>
       </div>
 
-      {/* Input de búsqueda tipo comando */}
+      {/* Input de búsqueda estilizado */}
       <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-400 pointer-events-none" />
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-carrefour-blue pointer-events-none" />
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Buscar por artículo o marca (ej. La Serenísima, Cocinero, Matarazzo, Marolio)..."
-          className="w-full rounded border border-paper-border bg-paper-50 py-3 pl-10 pr-10 text-sm text-ink-900 placeholder-ink-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-carrefour-blue focus:border-carrefour-blue transition-colors"
+          className="w-full rounded-xl border-2 border-paper-border/80 bg-slate-50/60 py-3 pl-10 pr-10 text-sm text-ink-900 placeholder-ink-400 focus:bg-white focus:outline-none focus:border-carrefour-blue transition-all shadow-inner"
         />
         {query ? (
           <button
@@ -121,7 +124,7 @@ export function ProductSearch() {
           </button>
         ) : loading ? (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            <Loader2 className="h-4 w-4 animate-spin text-ink-400" />
+            <Loader2 className="h-4 w-4 animate-spin text-carrefour-blue" />
           </div>
         ) : null}
       </div>
@@ -131,7 +134,7 @@ export function ProductSearch() {
         <div className="space-y-2 pt-2 border-t border-paper-border">
           <div className="flex items-center justify-between text-xs font-mono text-ink-500">
             <span>{results.length} coincidencias encontradas</span>
-            <span>Tocá un artículo para ver su gráfico</span>
+            <span className="text-carrefour-blue font-semibold">Tocá un artículo para ver su gráfica</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -143,10 +146,10 @@ export function ProductSearch() {
               return (
                 <div
                   key={prod.id}
-                  className={`rounded border transition-all ${
+                  className={`rounded-xl border transition-all ${
                     isExpanded
-                      ? "bg-paper-50 border-carrefour-blue ring-1 ring-carrefour-blue/30"
-                      : "bg-white border-paper-border hover:border-ink-400"
+                      ? "bg-blue-50/40 border-carrefour-blue shadow-sm ring-1 ring-carrefour-blue/30"
+                      : "bg-white border-paper-border hover:border-blue-300"
                   }`}
                 >
                   <div
@@ -155,7 +158,7 @@ export function ProductSearch() {
                   >
                     {/* Imagen de producto si existe */}
                     {prod.imagenUrl ? (
-                      <div className="h-12 w-12 rounded bg-white border border-paper-border/60 p-1 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                      <div className="h-12 w-12 rounded-lg bg-white border border-paper-border/60 p-1 flex-shrink-0 flex items-center justify-center overflow-hidden shadow-sm">
                         <img
                           src={prod.imagenUrl}
                           alt={prod.nombre}
@@ -164,19 +167,19 @@ export function ProductSearch() {
                         />
                       </div>
                     ) : (
-                      <div className="h-12 w-12 rounded bg-paper-200/50 border border-paper-border flex-shrink-0 flex items-center justify-center text-[10px] font-mono text-ink-400 uppercase">
+                      <div className="h-12 w-12 rounded-lg bg-slate-100 border border-slate-200 flex-shrink-0 flex items-center justify-center text-[10px] font-mono text-ink-400 uppercase">
                         S/F
                       </div>
                     )}
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-mono uppercase text-ink-400 truncate">
+                        <span className="text-[10px] font-mono uppercase text-ink-400 truncate font-medium">
                           {prod.categoria}
                         </span>
                         {prod.varDia !== null && prod.varDia !== undefined && prod.varDia !== 0 && (
                           <span
-                            className={`text-[10px] font-mono font-semibold px-1 rounded ${
+                            className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full ${
                               prod.varDia > 0
                                 ? "bg-red-100 text-carrefour-red"
                                 : "bg-emerald-100 text-emerald-700"
@@ -186,34 +189,34 @@ export function ProductSearch() {
                           </span>
                         )}
                       </div>
-                      <div className="text-xs sm:text-sm font-semibold text-ink-900 truncate mt-0.5" title={prod.nombre}>
+                      <div className="text-xs sm:text-sm font-bold text-ink-900 truncate mt-0.5" title={prod.nombre}>
                         {prod.nombre}
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2 flex-shrink-0 font-mono">
                       <div className="text-right">
-                        <span className="text-sm font-bold text-ink-900 tabular-nums">
+                        <span className="text-sm font-extrabold text-ink-900 tabular-nums">
                           {formatCurrency(prod.precioActual)}
                         </span>
                       </div>
                       <div className="text-ink-400">
-                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        {isExpanded ? <ChevronUp className="h-4 w-4 text-carrefour-blue" /> : <ChevronDown className="h-4 w-4" />}
                       </div>
                     </div>
                   </div>
 
                   {/* Panel expandido con gráfico de curva */}
                   {isExpanded && (
-                    <div className="border-t border-paper-border bg-white p-3 space-y-2">
+                    <div className="border-t border-paper-border bg-white p-3.5 space-y-2 rounded-b-xl">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="font-mono text-ink-500">Historial de precios</span>
+                        <span className="font-mono text-ink-700 font-bold">Curva de precios en góndola</span>
                         {safeExternalUrl(prod.url) && (
                           <a
                             href={safeExternalUrl(prod.url)!}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-carrefour-blue hover:underline text-xs font-mono"
+                            className="inline-flex items-center gap-1 text-carrefour-blue hover:underline text-xs font-mono font-semibold"
                           >
                             <span>Ficha en Carrefour</span>
                             <ExternalLink className="h-3 w-3" />

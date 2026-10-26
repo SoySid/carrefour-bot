@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --background: #F6F4EF;
-  --foreground: #121211;
+  --background: #F4F6F9;
+  --foreground: #0F172A;
 }
 
 html {
@@ -12,8 +12,8 @@ html {
 }
 
 body {
-  color: #121211;
-  background-color: #F6F4EF;
+  color: #0F172A;
+  background-color: #F4F6F9;
   font-size: 15px;
   line-height: 1.5;
   font-family: 'Bricolage Grotesque', system-ui, -apple-system, sans-serif;
