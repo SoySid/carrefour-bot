@@ -1,5 +1,5 @@
 import React from "react";
-import { ShoppingBasket, Activity, ExternalLink, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { ShoppingBasket } from "lucide-react";
 import { DailyStats, ChanguitoItem } from "@/lib/types";
 
 interface HeroStatsProps {
@@ -31,177 +31,115 @@ export function HeroStats({ stats, changuito = [] }: HeroStatsProps) {
     : "0.0";
 
   return (
-    <section className="space-y-6">
-      {/* Título Principal */}
-      <div className="flex flex-col gap-1.5 max-w-3xl">
-        <div className="inline-flex items-center gap-2 text-xs font-semibold text-brand-400">
-          <Activity className="h-3.5 w-3.5" />
-          <span>Monitor de góndola en tiempo real</span>
-        </div>
-        <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-100 text-balance">
-          Precios al consumidor en Carrefour
+    <section className="space-y-4">
+      {/* Título Principal y Contexto */}
+      <div className="flex flex-col gap-1 max-w-2xl">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-100">
+          Índice de Precios Carrefour Online
         </h1>
-        <p className="text-xs sm:text-sm text-slate-300 max-w-2xl text-balance">
-          Relevamiento diario e independiente calculado sobre artículos con stock activo en la tienda online.
+        <p className="text-xs sm:text-sm text-slate-400">
+          Relevamiento diario automatizado de stock y precios de góndola en Argentina.
         </p>
       </div>
 
-      {/* Franja Horizontal: Indicadores Macro y Dispersión (Ancho Completo) */}
-      <div className="rounded-xl bg-surface-100 border border-surface-border p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-        {/* Métricas de Inflación (4 columnas) */}
-        <div className="lg:col-span-4 flex items-baseline gap-4 sm:gap-6 border-b lg:border-b-0 lg:border-r border-surface-border pb-4 lg:pb-0 lg:pr-6">
+      {/* Panel Terminal Unificado */}
+      <div className="rounded-xl bg-surface-100 border border-surface-border p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
+        {/* Métricas Principales */}
+        <div className="lg:col-span-5 flex items-baseline gap-6 border-b lg:border-b-0 lg:border-r border-surface-border pb-4 lg:pb-0 lg:pr-5">
           <div>
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block">
               Variación 24h
             </span>
-            <span
-              className={`text-4xl sm:text-5xl font-extrabold font-mono tracking-tight tabular-nums block mt-1 ${
-                isDayPositive
-                  ? "text-rose-400"
-                  : isDayNegative
-                  ? "text-emerald-400"
-                  : "text-slate-100"
-              }`}
-            >
-              {stats.varDiaGeneral > 0 ? `+${stats.varDiaGeneral.toFixed(2)}%` : `${stats.varDiaGeneral.toFixed(2)}%`}
-            </span>
-            <span className="text-xs text-slate-400 font-medium block mt-0.5">
-              Promedio ponderado
-            </span>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span
+                className={`text-3xl sm:text-4xl font-extrabold font-mono tracking-tight tabular-nums ${
+                  isDayPositive
+                    ? "text-rose-400"
+                    : isDayNegative
+                    ? "text-emerald-400"
+                    : "text-slate-100"
+                }`}
+              >
+                {stats.varDiaGeneral > 0 ? `+${stats.varDiaGeneral.toFixed(2)}%` : `${stats.varDiaGeneral.toFixed(2)}%`}
+              </span>
+              <span className="text-[11px] text-slate-400">promedio</span>
+            </div>
           </div>
 
-          <div className="border-l border-surface-border/60 pl-4 sm:pl-6">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-              Acumulado mes
+          <div className="border-l border-surface-border pl-6">
+            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block">
+              Inflación mes
             </span>
-            <span
-              className={`text-4xl sm:text-5xl font-extrabold font-mono tracking-tight tabular-nums block mt-1 ${
-                stats.varMesGeneral > 0
-                  ? "text-rose-400"
-                  : stats.varMesGeneral < 0
-                  ? "text-emerald-400"
-                  : "text-slate-100"
-              }`}
-            >
-              {stats.varMesGeneral > 0 ? `+${stats.varMesGeneral.toFixed(2)}%` : `${stats.varMesGeneral.toFixed(2)}%`}
-            </span>
-            <span className="text-xs text-slate-400 font-medium block mt-0.5">
-              Desde el 1 del mes
-            </span>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span
+                className={`text-3xl sm:text-4xl font-extrabold font-mono tracking-tight tabular-nums ${
+                  stats.varMesGeneral > 0
+                    ? "text-rose-400"
+                    : stats.varMesGeneral < 0
+                    ? "text-emerald-400"
+                    : "text-slate-100"
+                }`}
+              >
+                {stats.varMesGeneral > 0 ? `+${stats.varMesGeneral.toFixed(2)}%` : `${stats.varMesGeneral.toFixed(2)}%`}
+              </span>
+              <span className="text-[11px] text-slate-400">acumulado</span>
+            </div>
           </div>
         </div>
 
-        {/* Termómetro de Dispersión (5 columnas) */}
-        <div className="lg:col-span-5 space-y-2 border-b lg:border-b-0 lg:border-r border-surface-border pb-4 lg:pb-0 lg:pr-6">
-          <div className="flex items-center justify-between text-xs text-slate-300">
-            <span className="font-semibold text-slate-400">Dispersión de precios hoy</span>
+        {/* Termómetro de Dispersión */}
+        <div className="lg:col-span-4 space-y-2 border-b lg:border-b-0 lg:border-r border-surface-border pb-4 lg:pb-0 lg:pr-5">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-slate-300 font-medium">Movimiento de precios</span>
             <span className="font-mono text-slate-400 tabular-nums text-[11px]">
-              {stats.totalMonitoreados.toLocaleString("es-AR")} artículos relevados
+              {stats.totalMonitoreados.toLocaleString("es-AR")} artículos
             </span>
           </div>
 
-          <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-surface-200">
+          <div className="flex h-2 w-full overflow-hidden rounded-full bg-surface-200">
             <div
-              style={{ width: `${Math.max(pctSubieron, stats.subieronDia > 0 ? 2 : 0)}%` }}
+              style={{ width: `${Math.max(pctSubieron, stats.subieronDia > 0 ? 3 : 0)}%` }}
               className="bg-rose-500 transition-all duration-300"
-              title={`${stats.subieronDia} subieron (${pctSubieron.toFixed(1)}%)`}
+              title={`${stats.subieronDia} subieron`}
             />
             <div
-              style={{ width: `${Math.max(pctBajaron, stats.bajaronDia > 0 ? 2 : 0)}%` }}
+              style={{ width: `${Math.max(pctBajaron, stats.bajaronDia > 0 ? 3 : 0)}%` }}
               className="bg-emerald-500 transition-all duration-300"
-              title={`${stats.bajaronDia} bajaron (${pctBajaron.toFixed(1)}%)`}
+              title={`${stats.bajaronDia} bajaron`}
             />
             <div
               style={{ width: `${pctCongelados}%` }}
               className="bg-slate-700 transition-all duration-300"
-              title={`${stats.igualesDia} sin cambios (${pctCongelados.toFixed(1)}%)`}
+              title={`${stats.igualesDia} estables`}
             />
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5 font-mono text-xs tabular-nums">
-            <span className="text-rose-400 font-medium">+{stats.subieronDia} subas ({pctSubieron.toFixed(1)}%)</span>
-            <span className="text-emerald-400 font-medium">-{stats.bajaronDia} bajas ({pctBajaron.toFixed(1)}%)</span>
-            <span className="text-slate-300 font-medium">{stats.igualesDia.toLocaleString("es-AR")} estables ({pctCongelados.toFixed(1)}%)</span>
+          <div className="flex items-center justify-between text-[11px] font-mono tabular-nums text-slate-400">
+            <span className="text-rose-400 font-medium">+{stats.subieronDia} subieron</span>
+            <span className="text-emerald-400 font-medium">-{stats.bajaronDia} bajaron</span>
+            <span>{stats.igualesDia.toLocaleString("es-AR")} estables</span>
           </div>
         </div>
 
-        {/* Cobertura de góndola (3 columnas) */}
-        <div className="lg:col-span-3 flex lg:flex-col justify-between lg:justify-center items-center lg:items-start gap-1">
-          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-            Corte matutino
-          </span>
-          <span className="text-sm font-semibold text-slate-200">
-            100% stock verificado
-          </span>
-          <span className="text-xs text-slate-400">
-            10 departamentos esenciales
-          </span>
-        </div>
-      </div>
-
-      {/* Bloque Destacado: Canasta Básica de Primeras Marcas */}
-      <div className="rounded-xl bg-surface-100 border border-surface-border p-5 sm:p-6 space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-surface-border/60">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <ShoppingBasket className="h-4 w-4 text-brand-400" />
-              <h2 className="text-base sm:text-lg font-bold text-slate-100">
-                Canasta Básica de Primeras Marcas
-              </h2>
+        {/* Canasta Rápida (Changuito Compacto) */}
+        <div className="lg:col-span-3 flex items-center justify-between lg:justify-end gap-4">
+          <div className="text-left lg:text-right">
+            <div className="flex items-center gap-1.5 lg:justify-end text-[11px] font-medium text-slate-400 uppercase tracking-wider">
+              <ShoppingBasket className="h-3.5 w-3.5 text-brand-400" />
+              <span>Changuito Básico</span>
             </div>
-            <p className="text-xs text-slate-400">
-              Seguimiento de marcas líderes de consumo masivo (La Serenísima, Natura, Matarazzo, Gallo Oro, Pureza y Taragüí).
-            </p>
-          </div>
-
-          <div className="flex items-baseline gap-4 self-start sm:self-auto bg-surface-200/50 px-4 py-2 rounded-lg border border-surface-border">
-            <div>
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Total Changuito</span>
-              <span className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-100 tabular-nums">
+            <div className="flex items-baseline gap-2 lg:justify-end mt-0.5">
+              <span className="text-lg sm:text-xl font-bold font-mono text-slate-100 tabular-nums">
                 {formatCurrency(totalChanguitoHoy)}
               </span>
-            </div>
-            <div className="text-right border-l border-surface-border/60 pl-3">
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Var. 24h</span>
-              <span className={`text-xs font-mono font-bold tabular-nums ${
-                Number(varChanguito) > 0 ? "text-rose-400" : Number(varChanguito) < 0 ? "text-emerald-400" : "text-slate-300"
+              <span className={`text-[11px] font-mono font-semibold tabular-nums ${
+                Number(varChanguito) > 0 ? "text-rose-400" : Number(varChanguito) < 0 ? "text-emerald-400" : "text-slate-400"
               }`}>
                 {Number(varChanguito) > 0 ? `+${varChanguito}%` : `${varChanguito}%`}
               </span>
             </div>
+            <span className="text-[10px] text-slate-400 block mt-0.5">6 marcas líderes de referencia</span>
           </div>
-        </div>
-
-        {/* Grilla limpia de los 6 productos de marca */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {changuito.map((prod) => (
-            <div
-              key={prod.id}
-              className="flex items-center justify-between gap-3 p-3 rounded-lg bg-surface-200/30 border border-surface-border/60 hover:bg-surface-200/50 transition-colors"
-            >
-              <div className="min-w-0 flex-1">
-                <span className="text-[11px] font-semibold text-brand-400 uppercase tracking-wide block">
-                  {prod.categoria}
-                </span>
-                <h3 className="text-xs sm:text-sm font-semibold text-slate-200 truncate mt-0.5" title={prod.nombre}>
-                  {prod.nombre}
-                </h3>
-              </div>
-
-              <div className="text-right flex-shrink-0">
-                <span className="font-mono text-sm sm:text-base font-extrabold text-slate-100 tabular-nums block">
-                  {formatCurrency(prod.precioHoy)}
-                </span>
-                {prod.varDia !== 0 && (
-                  <span className={`text-[10px] font-mono font-bold ${
-                    prod.varDia > 0 ? "text-rose-400" : "text-emerald-400"
-                  }`}>
-                    {prod.varDia > 0 ? `+${prod.varDia}%` : `${prod.varDia}%`}
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
         </div>
       </div>
     </section>

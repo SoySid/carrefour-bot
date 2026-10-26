@@ -38,10 +38,10 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-surface-50 text-slate-100 bg-dot-grid relative selection:bg-brand-500/30 selection:text-white">
+    <div className="min-h-[100dvh] flex flex-col bg-surface-50 text-slate-100 relative selection:bg-brand-500/20 selection:text-white">
       <Header fechaHoy={data.stats.fechaHoy} />
 
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 sm:px-6 space-y-12 sm:space-y-16 pt-6 sm:pt-8 pb-12">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6 space-y-8 pt-6 pb-12">
         <HeroStats stats={data.stats} changuito={data.changuito} />
         <ProductSearch />
         <CategoryBreakdown categorias={data.categorias} />
@@ -49,15 +49,15 @@ export default async function HomePage() {
         <Methodology />
       </main>
 
-      <footer className="mt-20 border-t border-surface-border bg-surface-100 py-10 text-xs text-slate-400">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© {new Date().getFullYear()} Carrefour Tracker. Datos públicos de góndola para seguimiento de precios.</p>
-          <div className="flex items-center gap-6">
+      <footer className="mt-12 border-t border-surface-border bg-surface-100/60 py-6 text-xs text-slate-400">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p>© {new Date().getFullYear()} Carrefour Tracker • Observatorio independiente de precios de góndola.</p>
+          <div className="flex items-center gap-5">
             <a href="https://github.com/sidarg/carrefour-bot" target="_blank" rel="noopener noreferrer" className="hover:text-slate-200 transition-colors">
-              Repositorio GitHub
+              GitHub
             </a>
             <a href="https://t.me/carrefour_monitor_bot" target="_blank" rel="noopener noreferrer" className="hover:text-slate-200 transition-colors">
-              Bot en Telegram
+              Telegram
             </a>
           </div>
         </div>
