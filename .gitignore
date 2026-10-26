@@ -10,6 +10,20 @@ historial.json
 
 # Variables de entorno y credenciales
 .env
+.env*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.cer
+*id_rsa*
+serviceAccountKey.json
+credentials.json
+
+# Backups y volcados de bases de datos
+*.dump
+*.sql.gz
+*.bak
 
 # Configuración de editores
 .vscode/
@@ -23,6 +37,5 @@ web/node_modules/
 web/.next/
 web/.env*.local
 /.taste-skill/
-/assets/
+/assets/
 .vercel
-.env*

@@ -81,6 +81,40 @@ EXCLUDED_SUBCATEGORIES = {
 # Límite superior de precio unitario razonable para consumibles de supermercado
 MAX_PRODUCT_PRICE = 100000.0
 
+def mask_secrets(text: str) -> str:
+    """Oculta tokens de Telegram y credenciales de conexión en logs o alertas."""
+    if not text:
+        return ""
+    text = str(text)
+    if TELEGRAM_TOKEN:
+        text = text.replace(TELEGRAM_TOKEN, "***REDACTED_TELEGRAM_TOKEN***")
+    if DATABASE_URL:
+        text = text.replace(DATABASE_URL, "***REDACTED_DATABASE_URL***")
+    text = re.sub(r"bot[0-9]{8,10}:[a-zA-Z0-9_-]{35}", "bot***REDACTED***", text)
+    text = re.sub(r"postgres(?:ql)?://[^@\s]+@[^\s]+", "postgresql://***:***@***", text)
+    return text
+
+def sanitize_url(url: str, allowed_hosts=("carrefour.com.ar", "www.carrefour.com.ar", "vteximg.com.br", "vtexassets.com")) -> str:
+    """Garantiza que la URL sea exclusivamente HTTPS y pertenezca a dominios verificados."""
+    if not url:
+        return ""
+    url = url.strip()
+    if not url.startswith(("http://", "https://")):
+        if url.startswith("/"):
+            url = f"https://www.carrefour.com.ar{url}"
+        else:
+            return ""
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme != "https":
+            return ""
+        hostname = (parsed.hostname or "").lower()
+        if not any(hostname == h or hostname.endswith("." + h) for h in allowed_hosts):
+            return ""
+        return url
+    except Exception:
+        return ""
+
 # Variable local por hilo para sesiones de requests (Thread-safe)
 thread_local = threading.local()
 
@@ -218,8 +252,9 @@ def fetch_products_for_task(category_path, parent_cat_name, task_name, limit=Non
                     product_name = item.get("productName")
                     product_url = item.get("link", "")
 
-                    if product_url and not product_url.startswith("http"):
-                        product_url = f"https://www.carrefour.com.ar{product_url}"
+                    product_url = sanitize_url(product_url)
+                    if not product_url:
+                        continue
 
                     items_list = item.get("items")
                     if not items_list:
@@ -277,7 +312,7 @@ def fetch_products_for_task(category_path, parent_cat_name, task_name, limit=Non
                             "categoria": parent_cat_name,
                             "url": str(product_url).strip(),
                             "precio": price,
-                            "imagen_url": str(image_url).strip() if image_url else None
+                            "imagen_url": sanitize_url(str(image_url)) if image_url else None
                         })
 
                         if limit and len(products) >= limit:
@@ -430,13 +465,13 @@ def enviar_telegram(mensaje, parse_mode="HTML"):
             if len(chunks) > 1 and i < len(chunks) - 1:
                 time.sleep(0.5)
         except Exception as e:
-            logging.error(f"Error enviando mensaje a Telegram: {e}")
+            logging.error(f"Error enviando mensaje a Telegram: {mask_secrets(str(e))}")
 
 def notificar_error_telegram(error_msg):
     """Notifica una alerta de falla crítica al canal de Telegram."""
     if TELEGRAM_TOKEN and TELEGRAM_CHAT_ID:
         fecha = date.today().isoformat()
-        escaped_err = html.escape(str(error_msg))
+        escaped_err = html.escape(mask_secrets(str(error_msg)))
         alerta = (
             f"🚨 <b>Alerta Carrefour Bot - {fecha}</b>\n\n"
             f"❌ Se produjo un error fatal durante la ejecución:\n"
@@ -613,7 +648,7 @@ def check_already_executed_today():
     if not DATABASE_URL:
         return False
     try:
-        conn = psycopg2.connect(DATABASE_URL)
+        conn = psycopg2.connect(DATABASE_URL, connect_timeout=15, options="-c statement_timeout=30000")
         with conn.cursor() as cur:
             cur.execute("SELECT 1 FROM historial_precios WHERE fecha = CURRENT_DATE LIMIT 1;")
             exists = cur.fetchone() is not None
@@ -680,7 +715,7 @@ def main():
 
         # Persistencia en base de datos y reporte con gestión segura de conexiones
         logging.info("Conectando a PostgreSQL...")
-        conn = psycopg2.connect(DATABASE_URL)
+        conn = psycopg2.connect(DATABASE_URL, connect_timeout=15, options="-c statement_timeout=30000")
         try:
             with conn:
                 with conn.cursor() as cursor:

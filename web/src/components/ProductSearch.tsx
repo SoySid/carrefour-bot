@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Search, Loader2, X, ExternalLink, TrendingUp, TrendingDown, Minus, ChevronDown, ChevronUp } from "lucide-react";
 import { ProductSearchResult, PricePoint } from "@/lib/types";
+import { safeExternalUrl } from "@/lib/security";
 
 export function ProductSearch() {
   const [query, setQuery] = useState("");
@@ -207,9 +208,9 @@ export function ProductSearch() {
                         <div>
                           <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
                             <span className="font-semibold text-slate-300">Evolución de Precio Reciente</span>
-                            {prod.url && (
+                            {safeExternalUrl(prod.url) && (
                               <a
-                                href={prod.url}
+                                href={safeExternalUrl(prod.url)!}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 text-brand-400 hover:text-brand-300 text-xs font-medium"

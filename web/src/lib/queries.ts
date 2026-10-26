@@ -245,13 +245,18 @@ async function getLatestDates(): Promise<{ f_hoy: string; f_ayer: string }> {
   return cachedDates;
 }
 
+function escapeLikePattern(str: string): string {
+  return str.replace(/([%_\\])/g, "\\$1");
+}
+
 export async function searchProducts(query: string): Promise<ProductSearchResult[]> {
-  const term = query.trim();
+  const term = query.trim().slice(0, 60);
   if (!term || term.length < 2) return [];
 
   const { f_hoy, f_ayer } = await getLatestDates();
-  const cleanQuery = `%${term}%`;
-  const prefixQuery = `${term}%`;
+  const escapedTerm = escapeLikePattern(term);
+  const cleanQuery = `%${escapedTerm}%`;
+  const prefixQuery = `${escapedTerm}%`;
 
   const results = await sql`
     WITH matched AS (
@@ -292,7 +297,8 @@ export async function searchProducts(query: string): Promise<ProductSearchResult
 }
 
 export async function getProductHistory(productId: string): Promise<PricePoint[]> {
-  if (!productId) return [];
+  const cleanId = String(productId || "").trim().slice(0, 30);
+  if (!cleanId || !/^[a-zA-Z0-9_-]+$/.test(cleanId)) return [];
 
   const results = await sql`
     SELECT 

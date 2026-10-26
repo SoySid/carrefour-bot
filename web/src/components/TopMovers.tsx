@@ -1,5 +1,6 @@
 import React from "react";
 import { ProductMover } from "@/lib/types";
+import { safeExternalUrl } from "@/lib/security";
 import { ArrowUpRight, ArrowDownRight, ExternalLink } from "lucide-react";
 
 interface TopMoversProps {
@@ -70,9 +71,9 @@ export function TopMovers({ topSubas, topBajas }: TopMoversProps) {
                     <span className="inline-flex items-center rounded bg-rose-500/15 border border-rose-500/20 px-2 py-0.5 text-xs font-mono font-bold text-rose-400 tabular-nums">
                       +{Number(prod.varDia || 0).toFixed(1)}%
                     </span>
-                    {prod.url && (
+                    {safeExternalUrl(prod.url) && (
                       <a
-                        href={prod.url}
+                        href={safeExternalUrl(prod.url)!}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="rounded p-1.5 text-slate-400 hover:text-slate-200 hover:bg-surface-200 transition-colors"
@@ -130,9 +131,9 @@ export function TopMovers({ topSubas, topBajas }: TopMoversProps) {
                     <span className="inline-flex items-center rounded bg-emerald-500/15 border border-emerald-500/20 px-2 py-0.5 text-xs font-mono font-bold text-emerald-400 tabular-nums">
                       {Number(prod.varDia || 0).toFixed(1)}%
                     </span>
-                    {prod.url && (
+                    {safeExternalUrl(prod.url) && (
                       <a
-                        href={prod.url}
+                        href={safeExternalUrl(prod.url)!}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="rounded p-1.5 text-slate-400 hover:text-slate-200 hover:bg-surface-200 transition-colors"

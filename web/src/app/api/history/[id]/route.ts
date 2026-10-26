@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getProductHistory } from "@/lib/queries";
+import { ProductIdSchema } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
@@ -7,17 +8,21 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const id = params.id;
+  const parsed = ProductIdSchema.safeParse(params.id);
 
-  if (!id) {
-    return NextResponse.json({ error: "ID requerido" }, { status: 400 });
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Identificador de producto inválido" }, { status: 400 });
   }
 
   try {
-    const history = await getProductHistory(id);
-    return NextResponse.json(history);
+    const history = await getProductHistory(parsed.data);
+    return NextResponse.json(history, {
+      headers: {
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+      },
+    });
   } catch (error) {
-    console.error("Error al obtener historial:", error);
+    console.error("Error al obtener historial");
     return NextResponse.json({ error: "Error al consultar historial" }, { status: 500 });
   }
 }

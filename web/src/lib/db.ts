@@ -1,4 +1,5 @@
-import { neon, neonConfig } from "@neondatabase/serverless";
+import "server-only";
+import { neon } from "@neondatabase/serverless";
 
 const connectionString = process.env.DATABASE_URL || "";
 
