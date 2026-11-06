@@ -1,5 +1,6 @@
 import os
 import sys
+import re
 import time
 import random
 import logging
@@ -8,6 +9,7 @@ import html
 import threading
 import concurrent.futures
 from datetime import date
+from urllib.parse import urlparse
 from dotenv import load_dotenv
 
 import requests
@@ -648,8 +650,9 @@ def check_already_executed_today():
     if not DATABASE_URL:
         return False
     try:
-        conn = psycopg2.connect(DATABASE_URL, connect_timeout=15, options="-c statement_timeout=30000")
+        conn = psycopg2.connect(DATABASE_URL, connect_timeout=15)
         with conn.cursor() as cur:
+            cur.execute("SET statement_timeout = 30000;")
             cur.execute("SELECT 1 FROM historial_precios WHERE fecha = CURRENT_DATE LIMIT 1;")
             exists = cur.fetchone() is not None
         conn.close()
@@ -715,10 +718,11 @@ def main():
 
         # Persistencia en base de datos y reporte con gestión segura de conexiones
         logging.info("Conectando a PostgreSQL...")
-        conn = psycopg2.connect(DATABASE_URL, connect_timeout=15, options="-c statement_timeout=30000")
+        conn = psycopg2.connect(DATABASE_URL, connect_timeout=15)
         try:
             with conn:
                 with conn.cursor() as cursor:
+                    cursor.execute("SET statement_timeout = 30000;")
                     init_db(cursor)
                     save_products_and_prices(conn, cursor, all_products)
                     logging.info("Productos e historial de precios guardados exitosamente.")
