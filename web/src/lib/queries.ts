@@ -18,7 +18,7 @@ const VALID_CATEGORIES = Object.keys(CATEGORY_WEIGHTS);
 
 let cachedDashboard: { data: DashboardData; timestamp: number; key: string } | null = null;
 const CACHE_TTL_MS = 1000 * 60 * 15; // 15 minutos en memoria
-const CURRENT_CACHE_KEY = "brands_option_a_v1";
+const CURRENT_CACHE_KEY = "jevons_v2";
 
 export async function getDashboardData(): Promise<DashboardData> {
   const now = Date.now();
@@ -39,48 +39,112 @@ export async function getDashboardData(): Promise<DashboardData> {
   const f_hoy = availableDates[0] || new Date().toISOString().split("T")[0];
   const f_ayer = availableDates[1] || "";
   
-  // Buscar fecha al inicio del mes corriente
+  // Buscar cierre del mes anterior como base mensual; si no existe, primer registro del mes corriente
+  const prevMonthCloseRes = await sql`
+    SELECT TO_CHAR(MAX(fecha), 'YYYY-MM-DD') AS f
+    FROM historial_precios
+    WHERE fecha < DATE_TRUNC('month', ${f_hoy}::date);
+  `;
   const currentMonthPrefix = f_hoy.substring(0, 7);
   const monthDates = availableDates.filter((d) => d.startsWith(currentMonthPrefix));
-  const f_mes = monthDates.length > 0 ? monthDates[monthDates.length - 1] : f_ayer;
+  const f_mes = prevMonthCloseRes[0]?.f
+    ? String(prevMonthCloseRes[0].f)
+    : monthDates.length > 0
+    ? monthDates[monthDates.length - 1]
+    : f_ayer;
 
-  // Resumen por rubros auditados (con filtrado estadístico de outliers de carga)
+  // Resumen por rubros auditados (Índice de Jevons / media geométrica con recorte simétrico de outliers)
   const categoriasResult = await sql`
-    WITH precios AS (
+    WITH base_mes_ant AS (
+      SELECT DISTINCT ON (hp.producto_id) hp.producto_id, hp.precio
+      FROM historial_precios hp
+      WHERE hp.fecha < DATE_TRUNC('month', ${f_hoy}::date) AND hp.precio > 0
+      ORDER BY hp.producto_id, hp.fecha DESC
+    ),
+    base_mes_act AS (
+      SELECT DISTINCT ON (hp.producto_id) hp.producto_id, hp.precio
+      FROM historial_precios hp
+      WHERE hp.fecha >= DATE_TRUNC('month', ${f_hoy}::date) AND hp.fecha <= ${f_hoy}::date AND hp.precio > 0
+      ORDER BY hp.producto_id, hp.fecha ASC
+    ),
+    precios AS (
       SELECT 
         p.categoria,
-        h_hoy.precio AS precio_hoy,
-        h_ayer.precio AS precio_ayer,
-        h_mes.precio AS precio_mes,
-        ROUND(((h_hoy.precio - h_ayer.precio) / h_ayer.precio) * 100, 2) AS var_dia,
-        ROUND(((h_hoy.precio - h_mes.precio) / h_mes.precio) * 100, 2) AS var_mes
+        CASE WHEN h_ayer.precio > 0 THEN h_hoy.precio / h_ayer.precio ELSE NULL END AS ratio_dia,
+        CASE WHEN COALESCE(b_ant.precio, b_act.precio) > 0 THEN h_hoy.precio / COALESCE(b_ant.precio, b_act.precio) ELSE NULL END AS ratio_mes
       FROM productos p
       JOIN historial_precios h_hoy ON h_hoy.producto_id = p.id AND h_hoy.fecha = ${f_hoy}::date
-      LEFT JOIN historial_precios h_ayer ON h_ayer.producto_id = p.id AND h_ayer.fecha = ${f_ayer}::date
-      LEFT JOIN historial_precios h_mes ON h_mes.producto_id = p.id AND h_mes.fecha = ${f_mes}::date
+      LEFT JOIN historial_precios h_ayer ON h_ayer.producto_id = p.id AND h_ayer.fecha = ${f_ayer || null}::date
+      LEFT JOIN base_mes_ant b_ant ON b_ant.producto_id = p.id
+      LEFT JOIN base_mes_act b_act ON b_act.producto_id = p.id
       WHERE p.activo = TRUE 
         AND h_hoy.precio > 0 
         AND h_hoy.precio <= 100000
         AND p.categoria = ANY(${VALID_CATEGORIES})
+    ),
+    dia_stats AS (
+      SELECT
+        categoria,
+        LN(ratio_dia) AS ln_dia,
+        COUNT(*) OVER (PARTITION BY categoria) AS n_dia,
+        PERCENT_RANK() OVER (PARTITION BY categoria ORDER BY LN(ratio_dia)) AS pr_dia
+      FROM precios
+      WHERE ratio_dia BETWEEN 0.5 AND 2.0
+    ),
+    mes_stats AS (
+      SELECT
+        categoria,
+        LN(ratio_mes) AS ln_mes,
+        COUNT(*) OVER (PARTITION BY categoria) AS n_mes,
+        PERCENT_RANK() OVER (PARTITION BY categoria ORDER BY LN(ratio_mes)) AS pr_mes
+      FROM precios
+      WHERE ratio_mes BETWEEN 0.4 AND 2.5
+    ),
+    dia_agg AS (
+      SELECT categoria, AVG(ln_dia)::float AS avg_ln_dia
+      FROM dia_stats
+      WHERE n_dia < 20 OR (pr_dia >= 0.025 AND pr_dia <= 0.975)
+      GROUP BY categoria
+    ),
+    mes_agg AS (
+      SELECT categoria, AVG(ln_mes)::float AS avg_ln_mes
+      FROM mes_stats
+      WHERE n_mes < 20 OR (pr_mes >= 0.025 AND pr_mes <= 0.975)
+      GROUP BY categoria
+    ),
+    conteos AS (
+      SELECT 
+        categoria,
+        COUNT(*)::int AS total_productos,
+        COUNT(CASE WHEN ratio_dia > 1 AND ratio_dia <= 2.0 THEN 1 END)::int AS subieron,
+        COUNT(CASE WHEN ratio_dia < 1 AND ratio_dia >= 0.5 THEN 1 END)::int AS bajaron,
+        COUNT(CASE WHEN ratio_dia = 1 THEN 1 END)::int AS iguales
+      FROM precios
+      GROUP BY categoria
     )
     SELECT 
-      categoria,
-      COUNT(*)::int AS total_productos,
-      COALESCE(ROUND(AVG(var_dia) FILTER (WHERE var_dia BETWEEN -50 AND 100), 2), 0.00)::float AS var_dia,
-      COALESCE(ROUND(AVG(var_mes) FILTER (WHERE var_mes BETWEEN -60 AND 150), 2), 0.00)::float AS var_mes,
-      COUNT(CASE WHEN var_dia > 0 AND var_dia <= 100 THEN 1 END)::int AS subieron,
-      COUNT(CASE WHEN var_dia < 0 AND var_dia >= -50 THEN 1 END)::int AS bajaron,
-      COUNT(CASE WHEN var_dia = 0 THEN 1 END)::int AS iguales
-    FROM precios
-    GROUP BY categoria;
+      c.categoria,
+      c.total_productos,
+      COALESCE(da.avg_ln_dia, 0.0)::float AS avg_ln_dia,
+      COALESCE(ma.avg_ln_mes, 0.0)::float AS avg_ln_mes,
+      COALESCE(ROUND(((EXP(da.avg_ln_dia) - 1) * 100)::numeric, 2), 0.00)::float AS var_dia,
+      COALESCE(ROUND(((EXP(ma.avg_ln_mes) - 1) * 100)::numeric, 2), 0.00)::float AS var_mes,
+      c.subieron,
+      c.bajaron,
+      c.iguales
+    FROM conteos c
+    LEFT JOIN dia_agg da ON da.categoria = c.categoria
+    LEFT JOIN mes_agg ma ON ma.categoria = c.categoria;
   `;
 
-  const categoriasParsed: CategoryStat[] = (categoriasResult || []).map((row: any) => {
+  const categoriasWithLogs = (categoriasResult || []).map((row: any) => {
     const catName = String(row.categoria || "");
     return {
       categoria: catName,
       peso: CATEGORY_WEIGHTS[catName] || 0.0,
       totalProductos: Number(row.total_productos || 0),
+      avgLnDia: Number(row.avg_ln_dia || 0),
+      avgLnMes: Number(row.avg_ln_mes || 0),
       varDia: Number(row.var_dia || 0),
       varMes: Number(row.var_mes || 0),
       subieron: Number(row.subieron || 0),
@@ -89,14 +153,14 @@ export async function getDashboardData(): Promise<DashboardData> {
     };
   });
 
-  // Cálculo ponderado general (Canasta Familiar estilo IPC)
-  const totalPeso = categoriasParsed.reduce((acc, c) => acc + (c.peso || 0), 0) || 1.0;
-  const varDiaPonderada = Number((
-    categoriasParsed.reduce((acc, c) => acc + c.varDia * c.peso, 0) / totalPeso
-  ).toFixed(2));
-  const varMesPonderada = Number((
-    categoriasParsed.reduce((acc, c) => acc + c.varMes * c.peso, 0) / totalPeso
-  ).toFixed(2));
+  // Cálculo ponderado general en escala logarítmica (Índice de Jevons ponderado)
+  const totalPeso = categoriasWithLogs.reduce((acc, c) => acc + (c.peso || 0), 0) || 1.0;
+  const avgLogDiaGeneral = categoriasWithLogs.reduce((acc, c) => acc + c.avgLnDia * c.peso, 0) / totalPeso;
+  const avgLogMesGeneral = categoriasWithLogs.reduce((acc, c) => acc + c.avgLnMes * c.peso, 0) / totalPeso;
+  const varDiaPonderada = Number(((Math.exp(avgLogDiaGeneral) - 1) * 100).toFixed(2));
+  const varMesPonderada = Number(((Math.exp(avgLogMesGeneral) - 1) * 100).toFixed(2));
+
+  const categoriasParsed: CategoryStat[] = categoriasWithLogs.map(({ avgLnDia: _d, avgLnMes: _m, ...rest }) => rest);
 
   const totalMonitoreados = categoriasParsed.reduce((acc, c) => acc + c.totalProductos, 0);
   const subieronTotal = categoriasParsed.reduce((acc, c) => acc + c.subieron, 0);

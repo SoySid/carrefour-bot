@@ -10,8 +10,8 @@ export function Methodology() {
     },
     {
       icon: ShieldCheck,
-      title: "Filtro de valores extremos",
-      desc: "Se omiten variaciones diarias mayores al 100% o caídas superiores al 50% para descartar errores de carga en góndola digital.",
+      title: "Índice Jevons y filtro de extremos",
+      desc: "Se utiliza media geométrica (estándar IPC) recortando el 2.5% extremo por rubro y variaciones diarias fuera de -50% / +100% para neutralizar promociones y errores.",
     },
     {
       icon: Database,

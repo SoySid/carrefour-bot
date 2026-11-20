@@ -1,6 +1,7 @@
 import os
 import sys
 import re
+import math
 import time
 import random
 import logging
@@ -424,6 +425,29 @@ def calcular_variacion(dato1, dato2):
         return 0.0
     return round(((float(dato1) - float(dato2)) / float(dato2)) * 100, 2)
 
+def calcular_indice_jevons(ratios, trim_pct=0.025):
+    """
+    Calcula el índice de Jevons (media geométrica de ratios de precio) con recorte
+    simétrico de colas (trimmed mean en log-espacio) para neutralizar promociones y ruido.
+    Retorna (log_promedio, variacion_porcentual).
+    """
+    if not ratios:
+        return 0.0, 0.0
+
+    log_ratios = sorted(math.log(r) for r in ratios if r > 0)
+    if not log_ratios:
+        return 0.0, 0.0
+
+    n = len(log_ratios)
+    if n >= 20 and trim_pct > 0:
+        k = max(1, int(n * trim_pct))
+        if n - 2 * k > 0:
+            log_ratios = log_ratios[k:-k]
+
+    avg_log = sum(log_ratios) / len(log_ratios)
+    var_pct = round((math.exp(avg_log) - 1.0) * 100.0, 2)
+    return avg_log, var_pct
+
 def chunk_message(text, max_length=4000):
     """Divide un mensaje en partes de hasta 4000 caracteres respetando saltos de línea."""
     chunks = []
@@ -485,13 +509,14 @@ def generate_and_send_report(conn, cursor, all_products_today, send_telegram_fla
     """Calcula variaciones respecto a ayer y día 1, y envía el reporte a Telegram."""
     fecha_actual = date.today()
 
-    # Cargar precios anteriores más recientes (previos a la fecha de hoy, solo productos activos y precio > 0)
+    # Cargar precios del corte inmediatamente anterior (evita arrastrar faltantes de días previos al dato 24h)
     cursor.execute("""
-        SELECT DISTINCT ON (hp.producto_id) hp.producto_id, hp.precio
+        SELECT hp.producto_id, hp.precio
         FROM historial_precios hp
         JOIN productos p ON p.id = hp.producto_id
-        WHERE hp.fecha < CURRENT_DATE AND hp.precio > 0 AND p.activo = TRUE
-        ORDER BY hp.producto_id, hp.fecha DESC
+        WHERE hp.fecha = (SELECT MAX(fecha) FROM historial_precios WHERE fecha < CURRENT_DATE)
+          AND hp.precio > 0
+          AND p.activo = TRUE
     """)
     precios_ayer = {prod_id: float(precio) for prod_id, precio in cursor.fetchall()}
 
@@ -541,8 +566,6 @@ def generate_and_send_report(conn, cursor, all_products_today, send_telegram_fla
         return
 
     categorias_stats = {}
-    variaciones_dia = []
-    variaciones_mes = []
     subieron_dia = 0
     bajaron_dia = 0
     iguales_dia = 0
@@ -557,57 +580,52 @@ def generate_and_send_report(conn, cursor, all_products_today, send_telegram_fla
 
         if cat not in categorias_stats:
             categorias_stats[cat] = {
-                "variaciones_dia": [],
-                "variaciones_mes": [],
+                "ratios_dia": [],
+                "ratios_mes": [],
                 "subieron": 0,
                 "bajaron": 0,
                 "iguales": 0
             }
 
-        # Variación Día a Día (filtrando anomalías extremas por error de carga)
+        # Variación Día a Día (ratio simétrico 0.5x a 2.0x para descartar anomalías de carga)
         if precio_a is not None and precio_a > 0:
-            var_d = calcular_variacion(precio_h, precio_a)
-            if -50.0 <= var_d <= 100.0:
-                variaciones_dia.append(var_d)
-                categorias_stats[cat]["variaciones_dia"].append(var_d)
+            ratio_d = precio_h / precio_a
+            if 0.5 <= ratio_d <= 2.0:
+                categorias_stats[cat]["ratios_dia"].append(ratio_d)
 
-                if var_d > 0:
+                if precio_h > precio_a:
                     subieron_dia += 1
                     categorias_stats[cat]["subieron"] += 1
-                elif var_d < 0:
+                elif precio_h < precio_a:
                     bajaron_dia += 1
                     categorias_stats[cat]["bajaron"] += 1
                 else:
                     iguales_dia += 1
                     categorias_stats[cat]["iguales"] += 1
 
-        # Variación Acumulada del Mes en Curso (acotando saltos irreales de precio)
+        # Variación Acumulada del Mes en Curso (ratio simétrico 0.4x a 2.5x)
         if precio_m is not None and precio_m > 0:
-            var_m = calcular_variacion(precio_h, precio_m)
-            if -60.0 <= var_m <= 150.0:
-                variaciones_mes.append(var_m)
-                categorias_stats[cat]["variaciones_mes"].append(var_m)
+            ratio_m = precio_h / precio_m
+            if 0.4 <= ratio_m <= 2.5:
+                categorias_stats[cat]["ratios_mes"].append(ratio_m)
+
+    # Calcular índices de Jevons por categoría
+    cat_indices = {}
+    for cat, stats in categorias_stats.items():
+        log_d, var_d = calcular_indice_jevons(stats["ratios_dia"])
+        log_m, var_m = calcular_indice_jevons(stats["ratios_mes"])
+        cat_indices[cat] = {"log_d": log_d, "var_d": var_d, "log_m": log_m, "var_m": var_m}
 
     # Formatear el reporte en HTML
     lineas = [f"📊 <b>Reporte Carrefour - {fecha_actual}</b>\n"]
 
-    # Canasta Familiar Ponderada (Ponderación estilo IPC sobre gasto de supermercado)
+    # Canasta Familiar Ponderada (Jevons ponderado por gasto de supermercado)
     total_peso = sum(CATEGORY_WEIGHTS.get(c, 0.0) for c in categorias_stats.keys())
     if total_peso > 0:
-        var_dia_general = round(
-            sum(
-                (sum(s["variaciones_dia"]) / len(s["variaciones_dia"]) if s["variaciones_dia"] else 0.0)
-                * CATEGORY_WEIGHTS.get(c, 0.0)
-                for c, s in categorias_stats.items()
-            ) / total_peso, 2
-        )
-        var_mes_general = round(
-            sum(
-                (sum(s["variaciones_mes"]) / len(s["variaciones_mes"]) if s["variaciones_mes"] else 0.0)
-                * CATEGORY_WEIGHTS.get(c, 0.0)
-                for c, s in categorias_stats.items()
-            ) / total_peso, 2
-        )
+        avg_log_dia = sum(cat_indices[c]["log_d"] * CATEGORY_WEIGHTS.get(c, 0.0) for c in categorias_stats) / total_peso
+        avg_log_mes = sum(cat_indices[c]["log_m"] * CATEGORY_WEIGHTS.get(c, 0.0) for c in categorias_stats) / total_peso
+        var_dia_general = round((math.exp(avg_log_dia) - 1.0) * 100.0, 2)
+        var_mes_general = round((math.exp(avg_log_mes) - 1.0) * 100.0, 2)
     else:
         var_dia_general = 0.0
         var_mes_general = 0.0
@@ -628,10 +646,8 @@ def generate_and_send_report(conn, cursor, all_products_today, send_telegram_fla
 
     lineas.append("📋 <b>Variación por Rubro (Ponderación IPC):</b>")
     for cat, stats in sorted_cats:
-        v_cat_d = stats["variaciones_dia"]
-        v_cat_m = stats["variaciones_mes"]
-        var_cat_dia = round(sum(v_cat_d) / len(v_cat_d), 2) if v_cat_d else 0.0
-        var_cat_mes = round(sum(v_cat_m) / len(v_cat_m), 2) if v_cat_m else 0.0
+        var_cat_dia = cat_indices[cat]["var_d"]
+        var_cat_mes = cat_indices[cat]["var_m"]
         peso_pct = int(CATEGORY_WEIGHTS.get(cat, 0.0) * 100)
 
         estado_cat = "🔴" if var_cat_dia > 0 else "🟢" if var_cat_dia < 0 else "⚪"
